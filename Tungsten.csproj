@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Tungsten</AssemblyName>
+    <Version>1.2.3</Version>
+    <UseAppHost>false</UseAppHost>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <EnableObfuscation>false</EnableObfuscation>
+    <RestoreAuditMode>Off</RestoreAuditMode>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="VintagestoryAPI">
+      <HintPath>$(VINTAGE_STORY)/VintagestoryAPI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(VINTAGE_STORY)/Lib/0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(VINTAGE_STORY)/Lib/Newtonsoft.Json.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="modicon.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="modinfo.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Exclude vs-sourcecode and Documentation from compilation -->
+    <Compile Remove="vs-sourcecode\**" />
+    <EmbeddedResource Remove="vs-sourcecode\**" />
+    <None Remove="vs-sourcecode\**" />
+    <Compile Remove="Documentation\**" />
+    <EmbeddedResource Remove="Documentation\**" />
+    <None Remove="Documentation\**" />
+  </ItemGroup>
+
+  <Target Name="Obfuscate" AfterTargets="Build" Condition="'$(EnableObfuscation)' == 'true'">
+    <PropertyGroup>
+      <ObfuscarConfig>$(ProjectDir)obfuscar.xml</ObfuscarConfig>
+    </PropertyGroup>
+    
+    <Exec Command="obfuscar.console &quot;$(ObfuscarConfig)&quot;" 
+          IgnoreExitCode="true"
+          ContinueOnError="true" />
+    
+    <Copy SourceFiles="$(OutputPath)Obfuscated\Tungsten.dll" 
+          DestinationFiles="$(OutputPath)Tungsten.dll" 
+          Condition="Exists('$(OutputPath)Obfuscated\Tungsten.dll')" />
+    
+    <RemoveDir Directories="$(OutputPath)Obfuscated" Condition="Exists('$(OutputPath)Obfuscated')" />
+    
+    <Message Text="Mod obfuscated successfully with Obfuscar" Importance="high" Condition="Exists('$(OutputPath)Tungsten.dll')" />
+  </Target>
+
+  <Target Name="Package" AfterTargets="Obfuscate">
+    <PropertyGroup>
+      <ModName>Tungsten</ModName>
+      <ModsPath Condition="'$(APPDATA)' != ''">$(APPDATA)\VintagestoryData\Mods</ModsPath>
+      <ModsPath Condition="'$(APPDATA)' == ''">$(HOME)/.config/VintagestoryData/Mods</ModsPath>
+      <DllPath>$(OutputPath)Tungsten.dll</DllPath>
+    </PropertyGroup>
+    
+    <ItemGroup>
+      <ModFiles Include="$(DllPath)" />
+      <ModFiles Include="modinfo.json" />
+      <ModFiles Include="modicon.png" />
+    </ItemGroup>
+    
+    <RemoveDir Directories="bin\temp" />
+    <MakeDir Directories="bin\temp" />
+    <Copy SourceFiles="@(ModFiles)" DestinationFolder="bin\temp\" />
+    
+    <ZipDirectory SourceDirectory="bin\temp\" DestinationFile="bin\$(ModName).zip" Overwrite="true" />
+    
+    <MakeDir Directories="$(ModsPath)" Condition="!Exists('$(ModsPath)')" />
+    <Copy SourceFiles="bin\$(ModName).zip" DestinationFolder="$(ModsPath)" />
+    
+    <RemoveDir Directories="bin\temp" />
+    
+    <Message Text="Mod obfuscated, packaged and installed: $(ModsPath)\$(ModName).zip" Importance="high" />
+  </Target>
+</Project>
