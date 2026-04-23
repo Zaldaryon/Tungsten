@@ -1,0 +1,14 @@
+{
+  "type": "code",
+  "modid": "tungsten",
+  "name": "Tungsten",
+  "authors": ["Zaldaryon"],
+  "description": "Server-side performance optimizations",
+  "version": "1.2.3",
+  "side": "Server",
+  "requiredOnClient": false,
+  "requiredOnServer": true,
+  "dependencies": {
+    "game": "1.22.0"
+  }
+}
