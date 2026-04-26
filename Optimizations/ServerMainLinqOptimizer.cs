@@ -110,6 +110,7 @@ public static class ServerMainLinqOptimizer
 
         try
         {
+            TungstenProfiler.Mark("tungsten-allonlineplayers");
             var clients = getClientsFunc(__instance) as System.Collections.IDictionary;
             if (clients == null) return true;
 
@@ -137,6 +138,7 @@ public static class ServerMainLinqOptimizer
 
         try
         {
+            TungstenProfiler.Mark("tungsten-allplayers");
             var players = getPlayersByUidFunc(__instance) as System.Collections.IDictionary;
             if (players == null) return true;
 
@@ -162,5 +164,6 @@ public static class ServerMainLinqOptimizer
         getClientsFunc = null;
         getPlayersByUidFunc = null;
         getPlayerFunc = null;
+        api = null;
     }
 }

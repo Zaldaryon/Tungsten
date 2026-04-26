@@ -4,7 +4,7 @@
   "name": "Tungsten",
   "authors": ["Zaldaryon"],
   "description": "Server-side performance optimizations",
-  "version": "1.2.3",
+  "version": "1.3.0",
   "side": "Server",
   "requiredOnClient": false,
   "requiredOnServer": true,

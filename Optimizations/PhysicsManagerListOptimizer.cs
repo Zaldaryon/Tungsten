@@ -74,6 +74,7 @@ public static class PhysicsManagerListOptimizer
     public static void Dispose()
     {
         isEnabled = false;
+        api = null;
     }
 
     private static void ReplaceNewobjWithReusableList(List<CodeInstruction> codes, int index, Type listType, int slot)

@@ -30,6 +30,9 @@ namespace Tungsten
                 ["servermainlinqoptimization"] = (c, v) => c.EnableServerMainLinqOptimization = v,
                 ["placeholderoptimization"] = (c, v) => c.EnablePlaceholderOptimization = v,
                 ["wildcardfastmatchoptimization"] = (c, v) => c.EnableWildcardFastMatchOptimization = v,
+                ["getentitiesaroundoptimization"] = (c, v) => c.EnableGetEntitiesAroundOptimization = v,
+                ["entitydespawnpacketoptimization"] = (c, v) => c.EnableEntityDespawnPacketOptimization = v,
+                ["recipebaselinqoptimization"] = (c, v) => c.EnableRecipeBaseLinqOptimization = v,
                 ["threadlocallifecyclereset"] = (c, v) => c.EnableThreadLocalLifecycleReset = v,
                 ["reusablecollectionpoolconcurrentoptimization"] = (c, v) => c.EnableReusableCollectionPoolConcurrentOptimization = v,
                 ["reusablecollectionpoolconstructorcacheoptimization"] = (c, v) => c.EnableReusableCollectionPoolConstructorCacheOptimization = v,
@@ -173,6 +176,9 @@ namespace Tungsten
             config.EnableServerMainLinqOptimization = enable;
             config.EnablePlaceholderOptimization = enable;
             config.EnableWildcardFastMatchOptimization = enable;
+            config.EnableGetEntitiesAroundOptimization = enable;
+            config.EnableEntityDespawnPacketOptimization = enable;
+            config.EnableRecipeBaseLinqOptimization = enable;
 
             mod.Api.StoreModConfig(config, "tungsten.json");
 
@@ -219,7 +225,7 @@ namespace Tungsten
         {
             var config = mod.GetConfig();
             var status = new StringBuilder(1024);
-            status.AppendLine("Tungsten v1.2.3 - Optimizations:");
+            status.AppendLine("Tungsten v1.3.0 - Optimizations:");
 
             status.Append("entitylistreuse: ").Append(config.EnableEntityListReuse ? "ON" : "OFF").Append(" | ");
             status.Append("blocklistreuse: ").Append(config.EnableBlockListReuse ? "ON" : "OFF").AppendLine();
@@ -238,6 +244,9 @@ namespace Tungsten
             status.Append("servermainlinqoptimization: ").Append(config.EnableServerMainLinqOptimization ? "ON" : "OFF").AppendLine();
             status.Append("placeholderoptimization: ").Append(config.EnablePlaceholderOptimization ? "ON" : "OFF").Append(" | ");
             status.Append("wildcardfastmatchoptimization: ").Append(config.EnableWildcardFastMatchOptimization ? "ON" : "OFF").AppendLine();
+            status.Append("getentitiesaroundoptimization: ").Append(config.EnableGetEntitiesAroundOptimization ? "ON" : "OFF").Append(" | ");
+            status.Append("entitydespawnpacketoptimization: ").Append(config.EnableEntityDespawnPacketOptimization ? "ON" : "OFF").AppendLine();
+            status.Append("recipebaselinqoptimization: ").Append(config.EnableRecipeBaseLinqOptimization ? "ON" : "OFF").AppendLine();
             status.AppendLine();
 
             status.Append("Memory: AdvancedMonitoring=").Append(config.EnableAdvancedMonitoring ? "ON" : "OFF").Append(", ");

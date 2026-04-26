@@ -22,6 +22,11 @@ public class TungstenConfig
     public bool EnablePlaceholderOptimization { get; set; } = true;
     public bool EnableWildcardFastMatchOptimization { get; set; } = true;
 
+    // New optimizations (v1.3.0)
+    public bool EnableGetEntitiesAroundOptimization { get; set; } = true;
+    public bool EnableEntityDespawnPacketOptimization { get; set; } = true;
+    public bool EnableRecipeBaseLinqOptimization { get; set; } = true;
+
     // Advanced GC Optimizations (v1.9.2) - Prioritize GC performance over RAM
     public bool EnablePhysicsManagerListOptimization { get; set; } = true;
     public bool EnablePhysicsManagerMethodListOptimization { get; set; } = true;
@@ -279,6 +284,27 @@ public class TungstenConfig
                     changed = true;
                 }
                 break;
+            case "getentitiesaroundoptimization":
+                if (EnableGetEntitiesAroundOptimization != value)
+                {
+                    EnableGetEntitiesAroundOptimization = value;
+                    changed = true;
+                }
+                break;
+            case "entitydespawnpacketoptimization":
+                if (EnableEntityDespawnPacketOptimization != value)
+                {
+                    EnableEntityDespawnPacketOptimization = value;
+                    changed = true;
+                }
+                break;
+            case "recipebaselinqoptimization":
+                if (EnableRecipeBaseLinqOptimization != value)
+                {
+                    EnableRecipeBaseLinqOptimization = value;
+                    changed = true;
+                }
+                break;
         }
 
         if (changed)
@@ -315,6 +341,9 @@ public class TungstenConfig
             "unifiedruntimecircuitbreaker" => EnableUnifiedRuntimeCircuitBreaker,
             "ilsignaturemanifestvalidation" => EnableIlSignatureManifestValidation,
             "benchmarkharness" => EnableBenchmarkHarness,
+            "getentitiesaroundoptimization" => EnableGetEntitiesAroundOptimization,
+            "entitydespawnpacketoptimization" => EnableEntityDespawnPacketOptimization,
+            "recipebaselinqoptimization" => EnableRecipeBaseLinqOptimization,
             _ => null
         };
     }
@@ -344,6 +373,9 @@ public class TungstenConfig
             "unifiedruntimecircuitbreaker" => EnableUnifiedRuntimeCircuitBreaker,
             "ilsignaturemanifestvalidation" => EnableIlSignatureManifestValidation,
             "benchmarkharness" => EnableBenchmarkHarness,
+            "getentitiesaroundoptimization" => EnableGetEntitiesAroundOptimization,
+            "entitydespawnpacketoptimization" => EnableEntityDespawnPacketOptimization,
+            "recipebaselinqoptimization" => EnableRecipeBaseLinqOptimization,
             _ => false
         };
     }

@@ -264,6 +264,7 @@ namespace Tungsten
         public void Dispose()
         {
             Stop();
+            currentProcess?.Dispose();
         }
     }
 }

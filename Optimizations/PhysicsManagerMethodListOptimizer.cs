@@ -134,6 +134,7 @@ public static class PhysicsManagerMethodListOptimizer
     public static void Dispose()
     {
         ReusableCollectionPool.ClearAll();
+        api = null;
     }
 
     private static void ReplaceNewobjWithReusableList(List<CodeInstruction> codes, int index, Type listType, int slot)

@@ -61,6 +61,7 @@ public static class PlaceholderOptimization
 
         try
         {
+            TungstenProfiler.Mark("tungsten-placeholder");
             string optimized = FillPlaceHolderOptimized(input, searchReplace);
 
             if (Interlocked.Decrement(ref selfCheckRemaining) >= 0)
@@ -186,5 +187,12 @@ public static class PlaceholderOptimization
         {
             api?.Logger?.Warning("[Tungsten] [PlaceholderOptimization] Disabled and falling back to vanilla: " + reason);
         }
+    }
+
+    public static void Dispose()
+    {
+        disabled = false;
+        disableLogGate = 0;
+        api = null;
     }
 }
