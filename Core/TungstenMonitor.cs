@@ -50,7 +50,7 @@ namespace Tungsten
 
         private void LogInitialDiagnostics()
         {
-            int threadCount = Process.GetCurrentProcess().Threads.Count;
+            int threadCount = currentProcess.Threads.Count;
             int threadPoolThreads = 0;
             int completionPortThreads = 0;
             ThreadPool.GetAvailableThreads(out threadPoolThreads, out completionPortThreads);
@@ -186,6 +186,7 @@ namespace Tungsten
         public void Dispose()
         {
             advancedMonitorTimer?.Dispose();
+            currentProcess?.Dispose();
             lock (poolRegistry)
             {
                 poolRegistry.Clear();

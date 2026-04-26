@@ -126,6 +126,8 @@ namespace Tungsten
 
             harmony = new Harmony("com.tungsten.optimizations");
 
+            TungstenProfiler.Init();
+
             // Initialize advanced monitoring if enabled (v1.10.0)
             if (config.EnableAdvancedMonitoring)
             {
@@ -376,6 +378,47 @@ namespace Tungsten
                 }
             }
 
+            // v1.3.0: New optimizations
+            GetEntitiesAroundOptimizer getEntitiesAroundOptimizer = null;
+            if (config.EnableGetEntitiesAroundOptimization)
+            {
+                try
+                {
+                    getEntitiesAroundOptimizer = new GetEntitiesAroundOptimizer(api);
+                    getEntitiesAroundOptimizer.ApplyPatches(harmony);
+                }
+                catch (Exception ex)
+                {
+                    getEntitiesAroundOptimizer?.CleanupOnFailure();
+                    getEntitiesAroundOptimizer = null;
+                    Api.Logger.Error("[Tungsten] [GetEntitiesAroundOptimization] " + ex.Message);
+                }
+            }
+
+            if (config.EnableEntityDespawnPacketOptimization)
+            {
+                try
+                {
+                    EntityDespawnPacketOptimizer.Initialize(api, harmony);
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [EntityDespawnPacketOptimization] " + ex.Message);
+                }
+            }
+
+            if (config.EnableRecipeBaseLinqOptimization)
+            {
+                try
+                {
+                    RecipeBaseLinqOptimizer.Initialize(api, harmony);
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [RecipeBaseLinqOptimization] " + ex.Message);
+                }
+            }
+
             var tungstenCommand = new TungstenCommand(this, config);
 
             var onOff = new string[] { "on", "off" };
@@ -493,9 +536,19 @@ namespace Tungsten
                     .WithArgs(api.ChatCommands.Parsers.WordRange("action", onOff), api.ChatCommands.Parsers.OptionalInt("thresholdMs"))
                     .HandleWith(args => tungstenCommand.Execute(args))
                 .EndSubCommand()
+                .BeginSubCommand("getentitiesaroundoptimization")
+                    .WithArgs(api.ChatCommands.Parsers.WordRange("action", onOff))
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
+                .BeginSubCommand("entitydespawnpacketoptimization")
+                    .WithArgs(api.ChatCommands.Parsers.WordRange("action", onOff))
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
+                .BeginSubCommand("recipebaselinqoptimization")
+                    .WithArgs(api.ChatCommands.Parsers.WordRange("action", onOff))
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
                 .HandleWith(args => tungstenCommand.Execute(args));
-
-            // Count enabled optimizations and collect disabled ones
             int enabled = 0;
             var disabled = new System.Collections.Generic.List<string>();
             
@@ -516,8 +569,11 @@ namespace Tungsten
             if (config.EnableServerMainLinqOptimization) enabled++; else disabled.Add("ServerMainLinqOptimization");
             if (config.EnablePlaceholderOptimization) enabled++; else disabled.Add("PlaceholderOptimization");
             if (config.EnableWildcardFastMatchOptimization) enabled++; else disabled.Add("WildcardFastMatchOptimization");
+            if (config.EnableGetEntitiesAroundOptimization) enabled++; else disabled.Add("GetEntitiesAroundOptimization");
+            if (config.EnableEntityDespawnPacketOptimization) enabled++; else disabled.Add("EntityDespawnPacketOptimization");
+            if (config.EnableRecipeBaseLinqOptimization) enabled++; else disabled.Add("RecipeBaseLinqOptimization");
 
-            string msg = $"[Tungsten] Initialized ({enabled}/17 optimizations enabled)";
+            string msg = $"[Tungsten] Initialized ({enabled}/20 optimizations enabled)";
             if (disabled.Count > 0) msg += $" - Disabled: {string.Join(", ", disabled)}";
             Api.Logger.Notification(msg);
         }
@@ -533,7 +589,10 @@ namespace Tungsten
             PhysicsManagerListOptimizer.Dispose();
             PhysicsManagerMethodListOptimizer.Dispose();
             ServerMainLinqOptimizer.Dispose();
+            PlaceholderOptimization.Dispose();
             WildcardFastMatchOptimization.Dispose();
+            EntityDespawnPacketOptimizer.Dispose();
+            RecipeBaseLinqOptimizer.Dispose();
 
             // Dispose all instance optimizers
             EntityListOptimizer?.CleanupOnFailure();
@@ -758,6 +817,9 @@ namespace Tungsten
                 restartRequired |= oldConfig.EnableServerMainLinqOptimization != config.EnableServerMainLinqOptimization;
                 restartRequired |= oldConfig.EnablePlaceholderOptimization != config.EnablePlaceholderOptimization;
                 restartRequired |= oldConfig.EnableWildcardFastMatchOptimization != config.EnableWildcardFastMatchOptimization;
+                restartRequired |= oldConfig.EnableGetEntitiesAroundOptimization != config.EnableGetEntitiesAroundOptimization;
+                restartRequired |= oldConfig.EnableEntityDespawnPacketOptimization != config.EnableEntityDespawnPacketOptimization;
+                restartRequired |= oldConfig.EnableRecipeBaseLinqOptimization != config.EnableRecipeBaseLinqOptimization;
                 restartRequired |= oldConfig.EnableThreadLocalLifecycleReset != config.EnableThreadLocalLifecycleReset;
                 restartRequired |= oldConfig.EnableReusableCollectionPoolConcurrentOptimization != config.EnableReusableCollectionPoolConcurrentOptimization;
                 restartRequired |= oldConfig.EnableReusableCollectionPoolConstructorCacheOptimization != config.EnableReusableCollectionPoolConstructorCacheOptimization;

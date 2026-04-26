@@ -8,7 +8,7 @@ Tungsten reduces memory allocation pressure and GC pauses on dedicated servers b
 
 ## What it optimizes
 
-Tungsten targets 17 allocation hotspots across the server tick loop:
+Tungsten targets 20 allocation hotspots across the server tick loop:
 
 | Area | What it does |
 |------|-------------|
@@ -25,6 +25,9 @@ Tungsten targets 17 allocation hotspots across the server tick loop:
 | **Player queries** | Replaces LINQ-based `AllOnlinePlayers`/`AllPlayers` with direct iteration |
 | **Placeholder parsing** | Single-pass placeholder resolver instead of N regex passes per placeholder set |
 | **Wildcard matching** | Compiled regex cache with LRU eviction for `@`-pattern matching |
+| **Entity queries** | Reuses the intermediate list in `GetEntitiesAround` (~300-450 calls/sec) |
+| **Despawn packets** | Single-pass loop replacing 3× LINQ chains in entity despawn packet creation |
+| **Recipe LINQ** | Eliminates LINQ iterator allocations in `MergeStacks` and `MatchWildcardIngredients` |
 
 ## Installation
 

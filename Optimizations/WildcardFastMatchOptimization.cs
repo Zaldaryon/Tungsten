@@ -76,6 +76,7 @@ public static class WildcardFastMatchOptimization
 
         try
         {
+            TungstenProfiler.Mark("tungsten-wildcardmatch");
             var regex = GetCachedRegex(needle.Substring(1));
             if (regex == null)
                 return true; // fallback to vanilla on invalid pattern
@@ -93,7 +94,9 @@ public static class WildcardFastMatchOptimization
     public static void Dispose()
     {
         disabled = true;
+        disableLogGate = 0;
         regexCache.Clear();
+        api = null;
     }
 
     private static Regex GetCachedRegex(string pattern)
