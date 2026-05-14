@@ -33,6 +33,10 @@ namespace Tungsten
                 ["getentitiesaroundoptimization"] = (c, v) => c.EnableGetEntitiesAroundOptimization = v,
                 ["entitydespawnpacketoptimization"] = (c, v) => c.EnableEntityDespawnPacketOptimization = v,
                 ["recipebaselinqoptimization"] = (c, v) => c.EnableRecipeBaseLinqOptimization = v,
+                ["broadcastlinqoptimization"] = (c, v) => c.EnableBroadcastLinqOptimization = v,
+                ["bulkentityattributespacketoptimization"] = (c, v) => c.EnableBulkEntityAttributesPacketOptimization = v,
+                ["classregistryfrozenoptimization"] = (c, v) => c.EnableClassRegistryFrozenOptimization = v,
+                ["getplayersaroundoptimization"] = (c, v) => c.EnableGetPlayersAroundOptimization = v,
                 ["threadlocallifecyclereset"] = (c, v) => c.EnableThreadLocalLifecycleReset = v,
                 ["reusablecollectionpoolconcurrentoptimization"] = (c, v) => c.EnableReusableCollectionPoolConcurrentOptimization = v,
                 ["reusablecollectionpoolconstructorcacheoptimization"] = (c, v) => c.EnableReusableCollectionPoolConstructorCacheOptimization = v,
@@ -132,6 +136,12 @@ namespace Tungsten
                 return TextCommandResult.Success(mod.GetBenchmarkHarnessStatus());
             }
 
+            if (command == "manifest")
+            {
+                OptimizationIlSignatureManifestValidator.DumpCurrentHashes(mod.Api);
+                return TextCommandResult.Success("IL hashes dumped to server log. Check server-main.txt for output.");
+            }
+
             if (command == "all")
             {
                 string action = firstArg;
@@ -179,6 +189,10 @@ namespace Tungsten
             config.EnableGetEntitiesAroundOptimization = enable;
             config.EnableEntityDespawnPacketOptimization = enable;
             config.EnableRecipeBaseLinqOptimization = enable;
+            config.EnableBroadcastLinqOptimization = enable;
+            config.EnableBulkEntityAttributesPacketOptimization = enable;
+            config.EnableClassRegistryFrozenOptimization = enable;
+            config.EnableGetPlayersAroundOptimization = enable;
 
             mod.Api.StoreModConfig(config, "tungsten.json");
 
@@ -225,7 +239,7 @@ namespace Tungsten
         {
             var config = mod.GetConfig();
             var status = new StringBuilder(1024);
-            status.AppendLine("Tungsten v1.3.0 - Optimizations:");
+            status.AppendLine("Tungsten v1.3.1 - Optimizations:");
 
             status.Append("entitylistreuse: ").Append(config.EnableEntityListReuse ? "ON" : "OFF").Append(" | ");
             status.Append("blocklistreuse: ").Append(config.EnableBlockListReuse ? "ON" : "OFF").AppendLine();
@@ -247,6 +261,10 @@ namespace Tungsten
             status.Append("getentitiesaroundoptimization: ").Append(config.EnableGetEntitiesAroundOptimization ? "ON" : "OFF").Append(" | ");
             status.Append("entitydespawnpacketoptimization: ").Append(config.EnableEntityDespawnPacketOptimization ? "ON" : "OFF").AppendLine();
             status.Append("recipebaselinqoptimization: ").Append(config.EnableRecipeBaseLinqOptimization ? "ON" : "OFF").AppendLine();
+            status.Append("broadcastlinqoptimization: ").Append(config.EnableBroadcastLinqOptimization ? "ON" : "OFF").Append(" | ");
+            status.Append("bulkentityattributespacketoptimization: ").Append(config.EnableBulkEntityAttributesPacketOptimization ? "ON" : "OFF").AppendLine();
+            status.Append("classregistryfrozenoptimization: ").Append(config.EnableClassRegistryFrozenOptimization ? "ON" : "OFF").Append(" | ");
+            status.Append("getplayersaroundoptimization: ").Append(config.EnableGetPlayersAroundOptimization ? "ON" : "OFF").AppendLine();
             status.AppendLine();
 
             status.Append("Memory: AdvancedMonitoring=").Append(config.EnableAdvancedMonitoring ? "ON" : "OFF").Append(", ");

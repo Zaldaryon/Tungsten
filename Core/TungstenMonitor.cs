@@ -24,7 +24,7 @@ namespace Tungsten
         private int lastGen0, lastGen1, lastGen2;
         private System.Threading.Timer advancedMonitorTimer;
         private string csvDirectory;
-        private readonly object csvLock = new object();
+        private readonly Lock csvLock = new();
         private readonly Process currentProcess;
         private TimeSpan lastCpuTime;
         private DateTime lastCpuCheck;
@@ -240,7 +240,7 @@ namespace Tungsten
 
         // v1.9.3: Compiled TrimExcess delegates for near-native performance
         private static readonly Dictionary<Type, Delegate> trimExcessDelegates = new Dictionary<Type, Delegate>();
-        private static readonly object compileLock = new object();
+        private static readonly Lock compileLock = new();
 
         private class AccessCounter
         {

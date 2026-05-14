@@ -1,5 +1,6 @@
 using HarmonyLib;
 using System;
+using System.Threading;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
 using Vintagestory.API.Server;
@@ -16,7 +17,7 @@ namespace Tungsten
         public GetDropsListOptimizer GetDropsListOptimizer { get; private set; }
         private FrameProfilerController frameProfiler;
         private TungstenConfig config;
-        private readonly object configLock = new object();
+        private readonly Lock configLock = new();
         private Harmony harmony;
         private TungstenMonitor monitor;
         private TungstenBenchmarkHarness benchmarkHarness;
@@ -419,6 +420,55 @@ namespace Tungsten
                 }
             }
 
+            // v1.4.0: New optimizations
+            if (config.EnableBroadcastLinqOptimization)
+            {
+                try
+                {
+                    BroadcastLinqOptimizer.Initialize(api, harmony);
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [BroadcastLinqOptimization] " + ex.Message);
+                }
+            }
+
+            if (config.EnableBulkEntityAttributesPacketOptimization)
+            {
+                try
+                {
+                    BulkEntityAttributesPacketOptimizer.Initialize(api, harmony);
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [BulkEntityAttributesPacketOptimization] " + ex.Message);
+                }
+            }
+
+            if (config.EnableClassRegistryFrozenOptimization)
+            {
+                try
+                {
+                    ClassRegistryFrozenOptimizer.Initialize(api, harmony);
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [ClassRegistryFrozenOptimization] " + ex.Message);
+                }
+            }
+
+            if (config.EnableGetPlayersAroundOptimization)
+            {
+                try
+                {
+                    GetPlayersAroundOptimizer.Initialize(api, harmony);
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [GetPlayersAroundOptimization] " + ex.Message);
+                }
+            }
+
             var tungstenCommand = new TungstenCommand(this, config);
 
             var onOff = new string[] { "on", "off" };
@@ -548,6 +598,25 @@ namespace Tungsten
                     .WithArgs(api.ChatCommands.Parsers.WordRange("action", onOff))
                     .HandleWith(args => tungstenCommand.Execute(args))
                 .EndSubCommand()
+                .BeginSubCommand("broadcastlinqoptimization")
+                    .WithArgs(api.ChatCommands.Parsers.WordRange("action", onOff))
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
+                .BeginSubCommand("bulkentityattributespacketoptimization")
+                    .WithArgs(api.ChatCommands.Parsers.WordRange("action", onOff))
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
+                .BeginSubCommand("classregistryfrozenoptimization")
+                    .WithArgs(api.ChatCommands.Parsers.WordRange("action", onOff))
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
+                .BeginSubCommand("getplayersaroundoptimization")
+                    .WithArgs(api.ChatCommands.Parsers.WordRange("action", onOff))
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
+                .BeginSubCommand("manifest")
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
                 .HandleWith(args => tungstenCommand.Execute(args));
             int enabled = 0;
             var disabled = new System.Collections.Generic.List<string>();
@@ -572,8 +641,12 @@ namespace Tungsten
             if (config.EnableGetEntitiesAroundOptimization) enabled++; else disabled.Add("GetEntitiesAroundOptimization");
             if (config.EnableEntityDespawnPacketOptimization) enabled++; else disabled.Add("EntityDespawnPacketOptimization");
             if (config.EnableRecipeBaseLinqOptimization) enabled++; else disabled.Add("RecipeBaseLinqOptimization");
+            if (config.EnableBroadcastLinqOptimization) enabled++; else disabled.Add("BroadcastLinqOptimization");
+            if (config.EnableBulkEntityAttributesPacketOptimization) enabled++; else disabled.Add("BulkEntityAttributesPacketOptimization");
+            if (config.EnableClassRegistryFrozenOptimization) enabled++; else disabled.Add("ClassRegistryFrozenOptimization");
+            if (config.EnableGetPlayersAroundOptimization) enabled++; else disabled.Add("GetPlayersAroundOptimization");
 
-            string msg = $"[Tungsten] Initialized ({enabled}/20 optimizations enabled)";
+            string msg = $"[Tungsten] Initialized ({enabled}/24 optimizations enabled)";
             if (disabled.Count > 0) msg += $" - Disabled: {string.Join(", ", disabled)}";
             Api.Logger.Notification(msg);
         }
@@ -593,6 +666,10 @@ namespace Tungsten
             WildcardFastMatchOptimization.Dispose();
             EntityDespawnPacketOptimizer.Dispose();
             RecipeBaseLinqOptimizer.Dispose();
+            BroadcastLinqOptimizer.Dispose();
+            BulkEntityAttributesPacketOptimizer.Dispose();
+            ClassRegistryFrozenOptimizer.Dispose();
+            GetPlayersAroundOptimizer.Dispose();
 
             // Dispose all instance optimizers
             EntityListOptimizer?.CleanupOnFailure();

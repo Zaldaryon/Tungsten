@@ -14,7 +14,7 @@ namespace Tungsten
     /// </summary>
     public static class ReusableCollectionPool
     {
-        private static readonly object lockObj = new object();
+        private static readonly Lock lockObj = new();
         private static readonly Dictionary<(Type type, int slot), ThreadLocal<object>> listPoolsLegacy = new Dictionary<(Type, int), ThreadLocal<object>>();
         private static readonly Dictionary<(Type type, int slot), ThreadLocal<object>> setPoolsLegacy = new Dictionary<(Type, int), ThreadLocal<object>>();
         private static readonly Dictionary<Type, Action<object>> clearActionsLegacy = new Dictionary<Type, Action<object>>();

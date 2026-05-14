@@ -13,7 +13,7 @@ namespace Tungsten
         private static readonly ThreadLocal<HashSet<int>> reusableOreBearingBlocks = new(() => new HashSet<int>());
         private static readonly ConditionalWeakTable<object, BearingBlocksCache> bearingBlocksCache = new ConditionalWeakTable<object, BearingBlocksCache>();
         private static readonly Dictionary<System.Type, System.Reflection.MethodInfo> bearingBlocksMethodCache = new Dictionary<System.Type, System.Reflection.MethodInfo>();
-        private static readonly object cacheLock = new object();
+        private static readonly Lock cacheLock = new();
 
         private class BearingBlocksCache
         {

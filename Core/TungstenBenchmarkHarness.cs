@@ -15,7 +15,7 @@ namespace Tungsten
         private readonly ICoreServerAPI api;
         private readonly Func<TungstenConfig> configProvider;
         private readonly Action<string> onCriticalFailure;
-        private readonly object writeLock = new object();
+        private readonly Lock writeLock = new();
         private readonly Process currentProcess;
 
         private Timer timer;
