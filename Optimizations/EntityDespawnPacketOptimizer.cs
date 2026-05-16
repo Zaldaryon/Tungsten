@@ -40,6 +40,8 @@ namespace Tungsten
             try
             {
                 TungstenProfiler.Mark("tungsten-despawnpacket");
+                Diagnostics.DiagEntityDespawnPacket.OnPacketBuilt();
+                Diagnostics.DiagEntityDespawnPacket.OnAllocationsAvoided(3);
                 int count = despawns.Count;
                 long[] entityIds = new long[count];
                 int[] despawnReasons = new int[count];

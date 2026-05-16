@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
+using Tungsten.Diagnostics;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
 
@@ -393,6 +394,7 @@ public class BlockListReuseOptimizer
 
     public static List<BlockPos> GetReusableModifiedBlocksList()
     {
+        DiagBlockListReuse.OnReuse();
         var list = reusableModifiedBlocksList.Value;
         list.Clear();
         return list;
@@ -400,6 +402,7 @@ public class BlockListReuseOptimizer
 
     public static List<BlockPos> GetReusableModifiedBlocksNoRelightList()
     {
+        DiagBlockListReuse.OnReuse();
         var list = reusableModifiedBlocksNoRelightList.Value;
         list.Clear();
         return list;
@@ -407,6 +410,7 @@ public class BlockListReuseOptimizer
 
     public static List<BlockPos> GetReusableModifiedDecorsList()
     {
+        DiagBlockListReuse.OnReuse();
         var list = reusableModifiedDecorsList.Value;
         list.Clear();
         return list;

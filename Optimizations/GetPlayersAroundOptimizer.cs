@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
+using Tungsten.Diagnostics;
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
 using Vintagestory.API.MathTools;
@@ -100,6 +101,7 @@ public static class GetPlayersAroundOptimizer
         try
         {
             TungstenProfiler.Mark("tungsten-getplayersaround");
+            DiagGetPlayersAround.OnReuse();
 
             var list = reusableList.Value;
             list.Clear();

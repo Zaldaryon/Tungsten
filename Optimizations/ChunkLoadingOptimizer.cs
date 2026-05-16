@@ -151,6 +151,8 @@ namespace Tungsten
 
         public static List<long> GetReusableRequestList()
         {
+            Diagnostics.DiagChunkLoading.OnChunkProcessed();
+            Diagnostics.DiagChunkLoading.OnAllocationAvoided();
             return ThreadLocalHelper.GetAndClear(reusableRequestList);
         }
 

@@ -109,6 +109,8 @@ namespace Tungsten
 
         public static List<ItemStack> GetReusableItemStackList()
         {
+            Diagnostics.DiagGridRecipe.OnMatch();
+            Diagnostics.DiagGridRecipe.OnAllocationAvoided(2);
             return ThreadLocalHelper.GetAndClear(reusableItemStackList);
         }
 

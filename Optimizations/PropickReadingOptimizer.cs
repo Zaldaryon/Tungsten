@@ -7,7 +7,7 @@ using Vintagestory.API.Server;
 
 namespace Tungsten
 {
-    public class DepositGeneratorOptimizer
+    public class PropickReadingOptimizer
     {
         private readonly ICoreServerAPI api;
         private static readonly ThreadLocal<HashSet<int>> reusableOreBearingBlocks = new(() => new HashSet<int>());
@@ -21,7 +21,7 @@ namespace Tungsten
             public int SourceCount;
         }
 
-        public DepositGeneratorOptimizer(ICoreServerAPI api)
+        public PropickReadingOptimizer(ICoreServerAPI api)
         {
             this.api = api;
 
@@ -42,26 +42,26 @@ namespace Tungsten
             var discGeneratorType = AccessTools.TypeByName("Vintagestory.ServerMods.DiscDepositGenerator");
             if (discGeneratorType == null)
             {
-                api.Logger.Warning("[Tungsten] [DepositGeneratorOptimizer] Could not find DiscDepositGenerator type");
+                api.Logger.Warning("[Tungsten] [PropickReadingOptimizer] Could not find DiscDepositGenerator type");
                 return;
             }
 
             var oreBearingMethod = AccessTools.Method(discGeneratorType, "oreBearingBlockQuantityRelative");
             if (oreBearingMethod != null)
             {
-                var transpiler = AccessTools.Method(typeof(DepositGeneratorOptimizer), nameof(OreBearingBlockQuantityRelative_Transpiler));
+                var transpiler = AccessTools.Method(typeof(PropickReadingOptimizer), nameof(OreBearingBlockQuantityRelative_Transpiler));
                 harmony.Patch(oreBearingMethod, transpiler: new HarmonyMethod(transpiler));            }
             else
             {
-                api.Logger.Warning("[Tungsten] [DepositGeneratorOptimizer] Could not find oreBearingBlockQuantityRelative method");
+                api.Logger.Warning("[Tungsten] [PropickReadingOptimizer] Could not find oreBearingBlockQuantityRelative method");
             }
         }
 
         public static IEnumerable<CodeInstruction> OreBearingBlockQuantityRelative_Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             var codes = new List<CodeInstruction>(instructions);
-            var getReusableHashSet = AccessTools.Method(typeof(DepositGeneratorOptimizer), nameof(GetReusableOreBearingBlocks));
-            var getBearingBlocksCached = AccessTools.Method(typeof(DepositGeneratorOptimizer), nameof(GetBearingBlocksCached));
+            var getReusableHashSet = AccessTools.Method(typeof(PropickReadingOptimizer), nameof(GetReusableOreBearingBlocks));
+            var getBearingBlocksCached = AccessTools.Method(typeof(PropickReadingOptimizer), nameof(GetBearingBlocksCached));
             var targetMethod = AccessTools.Method(AccessTools.TypeByName("Vintagestory.ServerMods.DiscDepositGenerator"), "GetBearingBlocks");
 
             for (int i = 0; i < codes.Count; i++)
@@ -94,6 +94,8 @@ namespace Tungsten
 
         public static HashSet<int> GetReusableOreBearingBlocks()
         {
+            Diagnostics.DiagPropickReading.OnIntercept();
+            Diagnostics.DiagPropickReading.OnAllocationAvoided(1);
             // v1.10.0: ThreadLocalHelper uses cached config (no GetConfig() call needed)
             return ThreadLocalHelper.GetAndClear(reusableOreBearingBlocks);
         }

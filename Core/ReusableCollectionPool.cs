@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading;
+using Tungsten.Diagnostics;
 
 namespace Tungsten
 {
@@ -136,6 +137,10 @@ namespace Tungsten
         {
             if (listType == null) throw new ArgumentNullException(nameof(listType));
 
+            // Diag: PhysicsManager optimizations share slot 0 via this pool
+            DiagPhysicsManagerList.OnTick();
+            DiagPhysicsManagerList.OnAllocationAvoided();
+
             if (ThreadLocalHelper.IsDisposing)
                 return Activator.CreateInstance(listType);
 
@@ -219,6 +224,7 @@ namespace Tungsten
 
         public static object ToList(IEnumerable source, Type listType, int slot)
         {
+            DiagSendPlayerEntityDeaths.OnIntercept();
             var listObj = GetList(listType, slot);
             if (source == null) return listObj;
 

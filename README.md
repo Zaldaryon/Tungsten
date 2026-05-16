@@ -30,7 +30,7 @@ Server-side performance optimization mod for Vintage Story.
 8. `EnableCookingContainerOptimization`
 9. `EnableContainerOptimization`
 10. `EnableGridRecipeOptimization`
-11. `EnableDepositGeneratorOptimization`
+11. `EnablePropickReadingOptimization`
 
 ### Networking and server loop
 12. `EnableSendPlayerEntityDeathsOptimization`

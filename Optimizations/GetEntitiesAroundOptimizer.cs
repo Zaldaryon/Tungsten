@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection.Emit;
 using System.Threading;
+using Tungsten.Diagnostics;
 using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
 using Vintagestory.API.Server;
@@ -87,11 +88,15 @@ namespace Tungsten
         public static List<Entity> GetReusableEntityList()
         {
             if (depth > 0)
+            {
+                Diagnostics.DiagGetEntitiesAround.OnRecursionFallback();
                 return new List<Entity>();
+            }
 
             depth++;
             try
             {
+                Diagnostics.DiagGetEntitiesAround.OnReuse();
                 return ThreadLocalHelper.GetAndClear(reusableEntityList);
             }
             catch

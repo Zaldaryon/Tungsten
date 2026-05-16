@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Tungsten.Diagnostics;
 using Vintagestory.API.Server;
 
 namespace Tungsten.Optimizations;
@@ -136,6 +137,7 @@ public static class BulkEntityAttributesPacketOptimizer
         try
         {
             TungstenProfiler.Mark("tungsten-bulkattributes");
+            DiagBulkEntityAttributesPacket.OnPacketBuilt();
 
             var fullList = fullPackets as IList;
             var partialList = partialPackets as IList;
@@ -144,6 +146,7 @@ public static class BulkEntityAttributesPacketOptimizer
             // Reuse packet wrapper objects (they're consumed synchronously by SendPacket)
             var bulk = reusableBulkPacket ??= createBulkPacket();
             var packet = reusableServerPacket ??= createServerPacket();
+            DiagBulkEntityAttributesPacket.OnWrapperReused();
 
             // ToArray is unavoidable (network serializer consumes the arrays)
             // but we use compiled delegates instead of virtual dispatch

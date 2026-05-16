@@ -62,6 +62,8 @@ namespace Tungsten
             try
             {
                 TungstenProfiler.Mark("tungsten-mergestacks");
+                Diagnostics.DiagRecipeBaseLinq.OnIntercept();
+                Diagnostics.DiagRecipeBaseLinq.OnAllocationAvoided(2);
                 for (int i = 0; i < slots.Length; i++)
                 {
                     ItemStack suppliedStack = slots[i].Itemstack;
@@ -107,6 +109,8 @@ namespace Tungsten
             try
             {
                 TungstenProfiler.Mark("tungsten-matchwildcard");
+                Diagnostics.DiagRecipeBaseLinq.OnIntercept();
+                Diagnostics.DiagRecipeBaseLinq.OnAllocationAvoided(1);
                 for (int i = 0; i < ingredients.Length; i++)
                 {
                     var ingredient = ingredients[i];

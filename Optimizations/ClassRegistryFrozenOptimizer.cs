@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
+using Tungsten.Diagnostics;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 
@@ -75,8 +76,13 @@ public static class ClassRegistryFrozenOptimizer
 
                 // Get count for logging
                 var countProp = field.FieldType.GetProperty("Count");
+                int entryCount = 0;
                 if (countProp != null)
-                    totalEntries += (int)countProp.GetValue(dict);
+                {
+                    entryCount = (int)countProp.GetValue(dict);
+                    totalEntries += entryCount;
+                }
+                DiagClassRegistryFrozen.OnDictionaryCompacted(entryCount);
             }
 
             if (trimmed > 0)

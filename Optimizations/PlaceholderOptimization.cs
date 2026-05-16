@@ -62,6 +62,7 @@ public static class PlaceholderOptimization
         try
         {
             TungstenProfiler.Mark("tungsten-placeholder");
+            Diagnostics.DiagPlaceholder.OnIntercept();
             string optimized = FillPlaceHolderOptimized(input, searchReplace);
 
             if (Interlocked.Decrement(ref selfCheckRemaining) >= 0)
@@ -109,6 +110,7 @@ public static class PlaceholderOptimization
 
             if (TryResolvePlaceholder(input.AsSpan(openPos + 1, closePos - openPos - 1), searchReplace, out string value))
             {
+                Diagnostics.DiagPlaceholder.OnPlaceholderResolved();
                 sb ??= new StringBuilder(input.Length);
 
                 if (openPos > cursor)

@@ -77,6 +77,8 @@ namespace Tungsten
 
         public static List<ItemStack> GetReusableNonEmptyList()
         {
+            Diagnostics.DiagContainer.OnIntercept();
+            Diagnostics.DiagContainer.OnAllocationAvoided(1);
             return ThreadLocalHelper.GetAndClear(reusableNonEmptyList);
         }
     }

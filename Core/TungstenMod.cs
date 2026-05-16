@@ -294,17 +294,17 @@ namespace Tungsten
                 }
             }
 
-            if (config.EnableDepositGeneratorOptimization)
+            if (config.EnablePropickReadingOptimization)
             {
-                DepositGeneratorOptimizer depositGeneratorOptimizer = null;
+                PropickReadingOptimizer propickReadingOptimizer = null;
                 try
                 {
-                    depositGeneratorOptimizer = new DepositGeneratorOptimizer(api);
-                    depositGeneratorOptimizer.ApplyPatches(harmony);                }
+                    propickReadingOptimizer = new PropickReadingOptimizer(api);
+                    propickReadingOptimizer.ApplyPatches(harmony);                }
                 catch (Exception ex)
                 {
-                    depositGeneratorOptimizer?.CleanupOnFailure();
-                    Api.Logger.Error("[Tungsten] [DepositGeneratorOptimization] " + ex.Message);
+                    propickReadingOptimizer?.CleanupOnFailure();
+                    Api.Logger.Error("[Tungsten] [PropickReadingOptimization] " + ex.Message);
                 }
             }
 
@@ -471,6 +471,34 @@ namespace Tungsten
 
             var tungstenCommand = new TungstenCommand(this, config);
 
+            // Register diagnostic modules
+            Diagnostics.DiagRegistry.SetApi(api);
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagEntityListReuse());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagBlockListReuse());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagGetDropsListReuse());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagEventManagerListReuse());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagChunkLoading());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagChunkUnloading());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagEntitySimulation());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagCookingContainer());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagContainer());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagGridRecipe());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagPropickReading());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagSendPlayerEntityDeaths());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagPhysicsManagerList());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagPhysicsManagerMethodList());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagServerMainLinq());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagPlaceholder());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagWildcardFastMatch());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagGetEntitiesAround());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagEntityDespawnPacket());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagRecipeBaseLinq());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagBroadcastLinq());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagBulkEntityAttributesPacket());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagClassRegistryFrozen());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagGetPlayersAround());
+            api.Logger.Notification($"[Tungsten] Diagnostic modules registered: {Diagnostics.DiagRegistry.Count}");
+
             var onOff = new string[] { "on", "off" };
             api.ChatCommands.Create("tungsten")
                 .WithDescription("Tungsten performance optimization controls")
@@ -484,6 +512,10 @@ namespace Tungsten
                     .HandleWith(args => tungstenCommand.Execute(args))
                 .EndSubCommand()
                 .BeginSubCommand("reload")
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
+                .BeginSubCommand("diag")
+                    .WithArgs(api.ChatCommands.Parsers.OptionalWord("target"), api.ChatCommands.Parsers.OptionalWord("action"))
                     .HandleWith(args => tungstenCommand.Execute(args))
                 .EndSubCommand()
                 .BeginSubCommand("entitylistreuse")
@@ -631,7 +663,7 @@ namespace Tungsten
             if (config.EnableCookingContainerOptimization) enabled++; else disabled.Add("CookingContainerOptimization");
             if (config.EnableContainerOptimization) enabled++; else disabled.Add("ContainerOptimization");
             if (config.EnableGridRecipeOptimization) enabled++; else disabled.Add("GridRecipeOptimization");
-            if (config.EnableDepositGeneratorOptimization) enabled++; else disabled.Add("DepositGeneratorOptimization");
+            if (config.EnablePropickReadingOptimization) enabled++; else disabled.Add("PropickReadingOptimization");
             if (config.EnableSendPlayerEntityDeathsOptimization) enabled++; else disabled.Add("SendPlayerEntityDeathsOptimization");
             if (config.EnablePhysicsManagerListOptimization) enabled++; else disabled.Add("PhysicsManagerListOptimization");
             if (config.EnablePhysicsManagerMethodListOptimization) enabled++; else disabled.Add("PhysicsManagerMethodListOptimization");
@@ -653,6 +685,7 @@ namespace Tungsten
 
         public override void Dispose()
         {
+            Diagnostics.DiagRegistry.Dispose();
             monitor?.Dispose();
             benchmarkHarness?.Dispose();
             frameProfiler?.Dispose();
@@ -887,7 +920,7 @@ namespace Tungsten
                 restartRequired |= oldConfig.EnableCookingContainerOptimization != config.EnableCookingContainerOptimization;
                 restartRequired |= oldConfig.EnableContainerOptimization != config.EnableContainerOptimization;
                 restartRequired |= oldConfig.EnableGridRecipeOptimization != config.EnableGridRecipeOptimization;
-                restartRequired |= oldConfig.EnableDepositGeneratorOptimization != config.EnableDepositGeneratorOptimization;
+                restartRequired |= oldConfig.EnablePropickReadingOptimization != config.EnablePropickReadingOptimization;
                 restartRequired |= oldConfig.EnableSendPlayerEntityDeathsOptimization != config.EnableSendPlayerEntityDeathsOptimization;
                 restartRequired |= oldConfig.EnablePhysicsManagerListOptimization != config.EnablePhysicsManagerListOptimization;
                 restartRequired |= oldConfig.EnablePhysicsManagerMethodListOptimization != config.EnablePhysicsManagerMethodListOptimization;

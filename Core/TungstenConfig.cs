@@ -17,7 +17,12 @@ public class TungstenConfig
     public bool EnableCookingContainerOptimization { get; set; } = true;
     public bool EnableContainerOptimization { get; set; } = true;
     public bool EnableGridRecipeOptimization { get; set; } = true;
-    public bool EnableDepositGeneratorOptimization { get; set; } = true;
+    public bool EnablePropickReadingOptimization { get; set; } = true;
+
+    // Migration: old config field name → new field
+    [JsonProperty("EnableDepositGeneratorOptimization")]
+    private bool? _legacyDepositGenerator { set { if (value.HasValue) EnablePropickReadingOptimization = value.Value; } }
+
     public bool EnableSendPlayerEntityDeathsOptimization { get; set; } = true;
     public bool EnablePlaceholderOptimization { get; set; } = true;
     public bool EnableWildcardFastMatchOptimization { get; set; } = true;
@@ -220,10 +225,10 @@ public class TungstenConfig
                     changed = true;
                 }
                 break;
-            case "depositgeneratoroptimization":
-                if (EnableDepositGeneratorOptimization != value)
+            case "propickreadingoptimization":
+                if (EnablePropickReadingOptimization != value)
                 {
-                    EnableDepositGeneratorOptimization = value;
+                    EnablePropickReadingOptimization = value;
                     changed = true;
                 }
                 break;
@@ -366,7 +371,7 @@ public class TungstenConfig
             "sendplayerentitydeathsoptimization" => EnableSendPlayerEntityDeathsOptimization,
             "containeroptimization" => EnableContainerOptimization,
             "gridrecipeoptimization" => EnableGridRecipeOptimization,
-            "depositgeneratoroptimization" => EnableDepositGeneratorOptimization,
+            "propickreadingoptimization" => EnablePropickReadingOptimization,
             "placeholderoptimization" => EnablePlaceholderOptimization,
             "wildcardfastmatchoptimization" => EnableWildcardFastMatchOptimization,
             "threadlocallifecyclereset" => EnableThreadLocalLifecycleReset,
@@ -402,7 +407,7 @@ public class TungstenConfig
             "containeroptimization" => EnableContainerOptimization,
             "sendplayerentitydeathsoptimization" => EnableSendPlayerEntityDeathsOptimization,
             "gridrecipeoptimization" => EnableGridRecipeOptimization,
-            "depositgeneratoroptimization" => EnableDepositGeneratorOptimization,
+            "propickreadingoptimization" => EnablePropickReadingOptimization,
             "placeholderoptimization" => EnablePlaceholderOptimization,
             "wildcardfastmatchoptimization" => EnableWildcardFastMatchOptimization,
             "threadlocallifecyclereset" => EnableThreadLocalLifecycleReset,

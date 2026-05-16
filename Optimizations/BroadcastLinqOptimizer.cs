@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
+using Tungsten.Diagnostics;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 
@@ -191,9 +192,11 @@ public static class BroadcastLinqOptimizer
         try
         {
             TungstenProfiler.Mark("tungsten-broadcast-bytes");
+            DiagBroadcastLinq.OnIntercept();
             var clientsDict = getClients(__instance) as IDictionary;
             if (clientsDict == null) return true;
 
+            int clientCount = 0;
             foreach (DictionaryEntry entry in clientsDict)
             {
                 var client = entry.Value;
@@ -204,9 +207,13 @@ public static class BroadcastLinqOptimizer
                 {
                     var player = getClientPlayer(client);
                     if (player != null)
+                    {
                         callSendPacketPlayer(__instance, player, data);
+                        clientCount++;
+                    }
                 }
             }
+            DiagBroadcastLinq.OnClosuresAvoided(clientCount);
             return false;
         }
         catch (Exception)
@@ -224,6 +231,7 @@ public static class BroadcastLinqOptimizer
         try
         {
             TungstenProfiler.Mark("tungsten-broadcast-packet");
+            DiagBroadcastLinq.OnIntercept();
             var clientsDict = getClients(__instance) as IDictionary;
             if (clientsDict == null) return true;
 
@@ -273,6 +281,7 @@ public static class BroadcastLinqOptimizer
         try
         {
             TungstenProfiler.Mark("tungsten-broadcast-udp");
+            DiagBroadcastLinq.OnIntercept();
             var clientsDict = getClients(__instance) as IDictionary;
             if (clientsDict == null) return true;
 
