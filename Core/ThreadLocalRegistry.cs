@@ -10,7 +10,7 @@ namespace Tungsten
     public static class ThreadLocalRegistry
     {
         private static readonly HashSet<IDisposable> threadLocals = new HashSet<IDisposable>();
-        private static readonly object lockObj = new object();
+        private static readonly Lock lockObj = new();
 
         /// <summary>
         /// Register a ThreadLocal instance for disposal tracking.

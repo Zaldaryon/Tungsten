@@ -2,7 +2,9 @@ using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using Tungsten.Diagnostics;
 
 namespace Tungsten
 {
@@ -23,13 +25,20 @@ namespace Tungsten
                 ["cookingcontaineroptimization"] = (c, v) => c.EnableCookingContainerOptimization = v,
                 ["containeroptimization"] = (c, v) => c.EnableContainerOptimization = v,
                 ["gridrecipeoptimization"] = (c, v) => c.EnableGridRecipeOptimization = v,
-                ["depositgeneratoroptimization"] = (c, v) => c.EnableDepositGeneratorOptimization = v,
+                ["propickreadingoptimization"] = (c, v) => c.EnablePropickReadingOptimization = v,
                 ["sendplayerentitydeathsoptimization"] = (c, v) => c.EnableSendPlayerEntityDeathsOptimization = v,
                 ["physicsmanagerlistoptimization"] = (c, v) => c.EnablePhysicsManagerListOptimization = v,
                 ["physicsmanagermethodlistoptimization"] = (c, v) => c.EnablePhysicsManagerMethodListOptimization = v,
                 ["servermainlinqoptimization"] = (c, v) => c.EnableServerMainLinqOptimization = v,
                 ["placeholderoptimization"] = (c, v) => c.EnablePlaceholderOptimization = v,
                 ["wildcardfastmatchoptimization"] = (c, v) => c.EnableWildcardFastMatchOptimization = v,
+                ["getentitiesaroundoptimization"] = (c, v) => c.EnableGetEntitiesAroundOptimization = v,
+                ["entitydespawnpacketoptimization"] = (c, v) => c.EnableEntityDespawnPacketOptimization = v,
+                ["recipebaselinqoptimization"] = (c, v) => c.EnableRecipeBaseLinqOptimization = v,
+                ["broadcastlinqoptimization"] = (c, v) => c.EnableBroadcastLinqOptimization = v,
+                ["bulkentityattributespacketoptimization"] = (c, v) => c.EnableBulkEntityAttributesPacketOptimization = v,
+                ["classregistryfrozenoptimization"] = (c, v) => c.EnableClassRegistryFrozenOptimization = v,
+                ["getplayersaroundoptimization"] = (c, v) => c.EnableGetPlayersAroundOptimization = v,
                 ["threadlocallifecyclereset"] = (c, v) => c.EnableThreadLocalLifecycleReset = v,
                 ["reusablecollectionpoolconcurrentoptimization"] = (c, v) => c.EnableReusableCollectionPoolConcurrentOptimization = v,
                 ["reusablecollectionpoolconstructorcacheoptimization"] = (c, v) => c.EnableReusableCollectionPoolConstructorCacheOptimization = v,
@@ -129,6 +138,22 @@ namespace Tungsten
                 return TextCommandResult.Success(mod.GetBenchmarkHarnessStatus());
             }
 
+            if (command == "health")
+            {
+                return ShowHealth();
+            }
+
+            if (command == "manifest")
+            {
+                OptimizationIlSignatureManifestValidator.DumpCurrentHashes(mod.Api);
+                return TextCommandResult.Success("IL hashes dumped to server log. Check server-main.txt for output.");
+            }
+
+            if (command == "diag")
+            {
+                return HandleDiag(args);
+            }
+
             if (command == "all")
             {
                 string action = firstArg;
@@ -150,7 +175,65 @@ namespace Tungsten
                 }
             }
 
-            return TextCommandResult.Error("Usage: /tungsten [<opt>|all|stats|benchmarkharness|reload] [on|off]");
+            return TextCommandResult.Error("Usage: /tungsten [<opt>|all|stats|diag|benchmarkharness|reload] [on|off]");
+        }
+
+        private TextCommandResult HandleDiag(TextCommandCallingArgs args)
+        {
+            var caller = args.Caller?.Player as IServerPlayer;
+            string target = args.ArgCount > 0 ? (args[0] as string)?.ToLowerInvariant() : null;
+            string action = args.ArgCount > 1 ? (args[1] as string)?.ToLowerInvariant() : null;
+
+            if (string.IsNullOrEmpty(target))
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine("Tungsten Diagnostics — registered modules:");
+                foreach (var m in DiagRegistry.All)
+                    sb.Append("  ").Append(m.ShortName).Append(": ").AppendLine(m.Enabled ? "ON" : "off");
+                sb.AppendLine("Usage: /tungsten diag [all|<module>] [on|off|dump|reset]");
+                return TextCommandResult.Success(sb.ToString());
+            }
+
+            if (target == "all")
+            {
+                switch (action)
+                {
+                    case "on": DiagRegistry.EnableAll(); return TextCommandResult.Success("All diagnostic modules enabled.");
+                    case "off": DiagRegistry.DisableAll(); return TextCommandResult.Success("All diagnostic modules disabled.");
+                    case "dump": DiagRegistry.DumpAll(mod.Api, caller); return TextCommandResult.Success("Dumped all enabled modules. See chat/log.");
+                    case "reset": DiagRegistry.ResetAll(); return TextCommandResult.Success("All diagnostic modules reset.");
+                    default: return TextCommandResult.Error("Usage: /tungsten diag all [on|off|dump|reset]");
+                }
+            }
+
+            var module = DiagRegistry.Get(target);
+            if (module == null)
+            {
+                // Special commands that aren't modules
+                if (target == "nativebench")
+                {
+                    TungstenNativeNoise.RunMicroBenchmark(mod.Api);
+                    return TextCommandResult.Success("Native noise benchmark complete. See log.");
+                }
+                return TextCommandResult.Error($"Unknown diag module: {target}. Use /tungsten diag to list.");
+            }
+
+            switch (action)
+            {
+                case "on":
+                    module.Enable();
+                    mod.Api.Logger.Notification($"[Tungsten] [Diagnostics] Module '{target}' enabled");
+                    return TextCommandResult.Success($"Diag '{target}' enabled.");
+                case "off":
+                    module.Disable();
+                    mod.Api.Logger.Notification($"[Tungsten] [Diagnostics] Module '{target}' disabled");
+                    return TextCommandResult.Success($"Diag '{target}' disabled.");
+                case "dump": module.Dump(mod.Api, caller); return TextCommandResult.Success($"Dumped '{target}'. See chat/log.");
+                case "reset": module.Reset(); return TextCommandResult.Success($"Diag '{target}' reset.");
+                default:
+                    module.Dump(mod.Api, caller);
+                    return TextCommandResult.Success($"Dumped '{target}'. Use on/off/dump/reset.");
+            }
         }
 
         private TextCommandResult ToggleAllOptimizations(bool enable)
@@ -166,13 +249,20 @@ namespace Tungsten
             config.EnableCookingContainerOptimization = enable;
             config.EnableContainerOptimization = enable;
             config.EnableGridRecipeOptimization = enable;
-            config.EnableDepositGeneratorOptimization = enable;
+            config.EnablePropickReadingOptimization = enable;
             config.EnableSendPlayerEntityDeathsOptimization = enable;
             config.EnablePhysicsManagerListOptimization = enable;
             config.EnablePhysicsManagerMethodListOptimization = enable;
             config.EnableServerMainLinqOptimization = enable;
             config.EnablePlaceholderOptimization = enable;
             config.EnableWildcardFastMatchOptimization = enable;
+            config.EnableGetEntitiesAroundOptimization = enable;
+            config.EnableEntityDespawnPacketOptimization = enable;
+            config.EnableRecipeBaseLinqOptimization = enable;
+            config.EnableBroadcastLinqOptimization = enable;
+            config.EnableBulkEntityAttributesPacketOptimization = enable;
+            config.EnableClassRegistryFrozenOptimization = enable;
+            config.EnableGetPlayersAroundOptimization = enable;
 
             mod.Api.StoreModConfig(config, "tungsten.json");
 
@@ -219,7 +309,7 @@ namespace Tungsten
         {
             var config = mod.GetConfig();
             var status = new StringBuilder(1024);
-            status.AppendLine("Tungsten v1.2.3 - Optimizations:");
+            status.AppendLine("Tungsten v1.3.2 - Optimizations:");
 
             status.Append("entitylistreuse: ").Append(config.EnableEntityListReuse ? "ON" : "OFF").Append(" | ");
             status.Append("blocklistreuse: ").Append(config.EnableBlockListReuse ? "ON" : "OFF").AppendLine();
@@ -231,13 +321,20 @@ namespace Tungsten
             status.Append("cookingcontaineroptimization: ").Append(config.EnableCookingContainerOptimization ? "ON" : "OFF").Append(" | ");
             status.Append("containeroptimization: ").Append(config.EnableContainerOptimization ? "ON" : "OFF").AppendLine();
             status.Append("gridrecipeoptimization: ").Append(config.EnableGridRecipeOptimization ? "ON" : "OFF").Append(" | ");
-            status.Append("depositgeneratoroptimization: ").Append(config.EnableDepositGeneratorOptimization ? "ON" : "OFF").AppendLine();
+            status.Append("propickreadingoptimization: ").Append(config.EnablePropickReadingOptimization ? "ON" : "OFF").AppendLine();
             status.Append("sendplayerentitydeathsoptimization: ").Append(config.EnableSendPlayerEntityDeathsOptimization ? "ON" : "OFF").AppendLine();
             status.Append("physicsmanagerlistoptimization: ").Append(config.EnablePhysicsManagerListOptimization ? "ON" : "OFF").Append(" | ");
             status.Append("physicsmanagermethodlistoptimization: ").Append(config.EnablePhysicsManagerMethodListOptimization ? "ON" : "OFF").Append(" | ");
             status.Append("servermainlinqoptimization: ").Append(config.EnableServerMainLinqOptimization ? "ON" : "OFF").AppendLine();
             status.Append("placeholderoptimization: ").Append(config.EnablePlaceholderOptimization ? "ON" : "OFF").Append(" | ");
             status.Append("wildcardfastmatchoptimization: ").Append(config.EnableWildcardFastMatchOptimization ? "ON" : "OFF").AppendLine();
+            status.Append("getentitiesaroundoptimization: ").Append(config.EnableGetEntitiesAroundOptimization ? "ON" : "OFF").Append(" | ");
+            status.Append("entitydespawnpacketoptimization: ").Append(config.EnableEntityDespawnPacketOptimization ? "ON" : "OFF").AppendLine();
+            status.Append("recipebaselinqoptimization: ").Append(config.EnableRecipeBaseLinqOptimization ? "ON" : "OFF").AppendLine();
+            status.Append("broadcastlinqoptimization: ").Append(config.EnableBroadcastLinqOptimization ? "ON" : "OFF").Append(" | ");
+            status.Append("bulkentityattributespacketoptimization: ").Append(config.EnableBulkEntityAttributesPacketOptimization ? "ON" : "OFF").AppendLine();
+            status.Append("classregistryfrozenoptimization: ").Append(config.EnableClassRegistryFrozenOptimization ? "ON" : "OFF").Append(" | ");
+            status.Append("getplayersaroundoptimization: ").Append(config.EnableGetPlayersAroundOptimization ? "ON" : "OFF").AppendLine();
             status.AppendLine();
 
             status.Append("Memory: AdvancedMonitoring=").Append(config.EnableAdvancedMonitoring ? "ON" : "OFF").Append(", ");
@@ -254,6 +351,37 @@ namespace Tungsten
             status.Append(mod.GetFrameProfilerStatus());
 
             return TextCommandResult.Success(status.ToString());
+        }
+
+        private TextCommandResult ShowHealth()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("=== Tungsten Multi-Mod Health ===");
+
+            // Patch conflicts
+            var conflicts = mod.GetPatchConflicts();
+            if (conflicts == null || conflicts.Count == 0)
+            {
+                sb.AppendLine("Patch Conflicts: None detected");
+            }
+            else
+            {
+                sb.AppendLine($"Patch Conflicts: {conflicts.Count} potential issue(s)");
+                foreach (var c in conflicts)
+                    sb.AppendLine("  " + c.Replace("[Tungsten] [PatchConflict] ", ""));
+            }
+
+            // Handler counts by mod
+            var watchdog = mod.GetLeakWatchdog();
+            if (watchdog != null)
+            {
+                var counts = watchdog.GetCurrentCounts();
+                sb.AppendLine($"Event Handlers by Mod ({counts.Values.Sum()} total):");
+                foreach (var kv in counts.OrderByDescending(x => x.Value))
+                    sb.AppendLine($"  {kv.Key}: {kv.Value}");
+            }
+
+            return TextCommandResult.Success(sb.ToString());
         }
     }
 }

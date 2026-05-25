@@ -144,6 +144,7 @@ public class SendPlayerEntityDeathsOptimizer
     {
         ReusableCollectionPool.ClearAll();
         disabled = false;
+        staticApi = null;
     }
 
     private static void Disable(string reason)

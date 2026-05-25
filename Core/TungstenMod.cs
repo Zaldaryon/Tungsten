@@ -1,5 +1,8 @@
 using HarmonyLib;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
 using Vintagestory.API.Server;
@@ -16,10 +19,12 @@ namespace Tungsten
         public GetDropsListOptimizer GetDropsListOptimizer { get; private set; }
         private FrameProfilerController frameProfiler;
         private TungstenConfig config;
-        private readonly object configLock = new object();
+        private readonly Lock configLock = new();
         private Harmony harmony;
         private TungstenMonitor monitor;
         private TungstenBenchmarkHarness benchmarkHarness;
+        private LeakWatchdog leakWatchdog;
+        private List<string> patchConflicts;
 
         public override bool ShouldLoad(EnumAppSide forSide)
         {
@@ -126,12 +131,23 @@ namespace Tungsten
 
             harmony = new Harmony("com.tungsten.optimizations");
 
+            TungstenProfiler.Init();
+
             // Initialize advanced monitoring if enabled (v1.10.0)
             if (config.EnableAdvancedMonitoring)
             {
                 monitor = new TungstenMonitor(api);
                 monitor.StartAdvancedMonitoring();
             }
+
+            // Stability: leak watchdog (always active, negligible cost)
+            leakWatchdog = new LeakWatchdog(api);
+
+            // Stability: patch conflict detection (deferred to RunGame so all mods are loaded)
+            api.Event.ServerRunPhase(EnumServerRunPhase.RunGame, () =>
+            {
+                patchConflicts = PatchConflictDetector.Run(api);
+            });
 
             // Optional FrameProfiler integration (vanilla profiler)
             if (config.EnableFrameProfiler)
@@ -291,17 +307,17 @@ namespace Tungsten
                 }
             }
 
-            if (config.EnableDepositGeneratorOptimization)
+            if (config.EnablePropickReadingOptimization)
             {
-                DepositGeneratorOptimizer depositGeneratorOptimizer = null;
+                PropickReadingOptimizer propickReadingOptimizer = null;
                 try
                 {
-                    depositGeneratorOptimizer = new DepositGeneratorOptimizer(api);
-                    depositGeneratorOptimizer.ApplyPatches(harmony);                }
+                    propickReadingOptimizer = new PropickReadingOptimizer(api);
+                    propickReadingOptimizer.ApplyPatches(harmony);                }
                 catch (Exception ex)
                 {
-                    depositGeneratorOptimizer?.CleanupOnFailure();
-                    Api.Logger.Error("[Tungsten] [DepositGeneratorOptimization] " + ex.Message);
+                    propickReadingOptimizer?.CleanupOnFailure();
+                    Api.Logger.Error("[Tungsten] [PropickReadingOptimization] " + ex.Message);
                 }
             }
 
@@ -376,7 +392,172 @@ namespace Tungsten
                 }
             }
 
+            // v1.3.0: New optimizations
+            GetEntitiesAroundOptimizer getEntitiesAroundOptimizer = null;
+            if (config.EnableGetEntitiesAroundOptimization)
+            {
+                try
+                {
+                    getEntitiesAroundOptimizer = new GetEntitiesAroundOptimizer(api);
+                    getEntitiesAroundOptimizer.ApplyPatches(harmony);
+                }
+                catch (Exception ex)
+                {
+                    getEntitiesAroundOptimizer?.CleanupOnFailure();
+                    getEntitiesAroundOptimizer = null;
+                    Api.Logger.Error("[Tungsten] [GetEntitiesAroundOptimization] " + ex.Message);
+                }
+            }
+
+            if (config.EnableEntityDespawnPacketOptimization)
+            {
+                try
+                {
+                    EntityDespawnPacketOptimizer.Initialize(api, harmony);
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [EntityDespawnPacketOptimization] " + ex.Message);
+                }
+            }
+
+            if (config.EnableRecipeBaseLinqOptimization)
+            {
+                try
+                {
+                    RecipeBaseLinqOptimizer.Initialize(api, harmony);
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [RecipeBaseLinqOptimization] " + ex.Message);
+                }
+            }
+
+            // v1.4.0: New optimizations
+            if (config.EnableBroadcastLinqOptimization)
+            {
+                try
+                {
+                    BroadcastLinqOptimizer.Initialize(api, harmony);
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [BroadcastLinqOptimization] " + ex.Message);
+                }
+            }
+
+            if (config.EnableBulkEntityAttributesPacketOptimization)
+            {
+                try
+                {
+                    BulkEntityAttributesPacketOptimizer.Initialize(api, harmony);
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [BulkEntityAttributesPacketOptimization] " + ex.Message);
+                }
+            }
+
+            if (config.EnableClassRegistryFrozenOptimization)
+            {
+                try
+                {
+                    ClassRegistryFrozenOptimizer.Initialize(api, harmony);
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [ClassRegistryFrozenOptimization] " + ex.Message);
+                }
+            }
+
+            if (config.EnableGetPlayersAroundOptimization)
+            {
+                try
+                {
+                    GetPlayersAroundOptimizer.Initialize(api, harmony);
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [GetPlayersAroundOptimization] " + ex.Message);
+                }
+            }
+
+            if (config.EnableGenTerraZeroAllocOptimization)
+            {
+                try
+                {
+                    var genTerraOptimizer = new GenTerraZeroAllocOptimizer(api);
+                    genTerraOptimizer.ApplyPatches(harmony);
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [GenTerraZeroAlloc] " + ex.Message);
+                }
+            }
+
+            if (config.EnableGenTerraBitArrayOptimization)
+            {
+                try
+                {
+                    var bitArrayOptimizer = new GenTerraBitArrayOptimizer(api);
+                    bitArrayOptimizer.ApplyPatches(harmony);
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [GenTerraBitArray] " + ex.Message);
+                }
+            }
+
+            // Initialize native noise library (Phase C1)
+            if (config.EnableGenTerraNativeNoiseOptimization)
+            {
+                try
+                {
+                    // Use the directory where Tungsten.dll was loaded from
+                    string asmPath = typeof(TungstenMod).Assembly.Location;
+                    string basePath = Path.GetDirectoryName(asmPath) ?? "";
+                    TungstenNativeNoise.Initialize(basePath);
+                    if (!TungstenNativeNoise.IsAvailable)
+                    {
+                        Api.Logger.Warning("[Tungsten] [NativeNoise] Library not available or validation failed. Using managed fallback.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [NativeNoise] " + ex.Message);
+                }
+            }
+
             var tungstenCommand = new TungstenCommand(this, config);
+
+            // Register diagnostic modules
+            Diagnostics.DiagRegistry.SetApi(api);
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagEntityListReuse());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagBlockListReuse());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagGetDropsListReuse());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagEventManagerListReuse());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagChunkLoading());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagChunkUnloading());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagEntitySimulation());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagCookingContainer());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagContainer());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagGridRecipe());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagPropickReading());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagSendPlayerEntityDeaths());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagPhysicsManagerList());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagPhysicsManagerMethodList());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagServerMainLinq());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagPlaceholder());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagWildcardFastMatch());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagGetEntitiesAround());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagEntityDespawnPacket());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagRecipeBaseLinq());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagBroadcastLinq());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagBulkEntityAttributesPacket());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagClassRegistryFrozen());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagGetPlayersAround());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagGenTerraZeroAlloc());
+            api.Logger.Notification($"[Tungsten] Diagnostic modules registered: {Diagnostics.DiagRegistry.Count}");
 
             var onOff = new string[] { "on", "off" };
             api.ChatCommands.Create("tungsten")
@@ -391,6 +572,10 @@ namespace Tungsten
                     .HandleWith(args => tungstenCommand.Execute(args))
                 .EndSubCommand()
                 .BeginSubCommand("reload")
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
+                .BeginSubCommand("diag")
+                    .WithArgs(api.ChatCommands.Parsers.OptionalWord("target"), api.ChatCommands.Parsers.OptionalWord("action"))
                     .HandleWith(args => tungstenCommand.Execute(args))
                 .EndSubCommand()
                 .BeginSubCommand("entitylistreuse")
@@ -493,9 +678,38 @@ namespace Tungsten
                     .WithArgs(api.ChatCommands.Parsers.WordRange("action", onOff), api.ChatCommands.Parsers.OptionalInt("thresholdMs"))
                     .HandleWith(args => tungstenCommand.Execute(args))
                 .EndSubCommand()
+                .BeginSubCommand("getentitiesaroundoptimization")
+                    .WithArgs(api.ChatCommands.Parsers.WordRange("action", onOff))
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
+                .BeginSubCommand("entitydespawnpacketoptimization")
+                    .WithArgs(api.ChatCommands.Parsers.WordRange("action", onOff))
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
+                .BeginSubCommand("recipebaselinqoptimization")
+                    .WithArgs(api.ChatCommands.Parsers.WordRange("action", onOff))
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
+                .BeginSubCommand("broadcastlinqoptimization")
+                    .WithArgs(api.ChatCommands.Parsers.WordRange("action", onOff))
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
+                .BeginSubCommand("bulkentityattributespacketoptimization")
+                    .WithArgs(api.ChatCommands.Parsers.WordRange("action", onOff))
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
+                .BeginSubCommand("classregistryfrozenoptimization")
+                    .WithArgs(api.ChatCommands.Parsers.WordRange("action", onOff))
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
+                .BeginSubCommand("getplayersaroundoptimization")
+                    .WithArgs(api.ChatCommands.Parsers.WordRange("action", onOff))
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
+                .BeginSubCommand("manifest")
+                    .HandleWith(args => tungstenCommand.Execute(args))
+                .EndSubCommand()
                 .HandleWith(args => tungstenCommand.Execute(args));
-
-            // Count enabled optimizations and collect disabled ones
             int enabled = 0;
             var disabled = new System.Collections.Generic.List<string>();
             
@@ -509,22 +723,33 @@ namespace Tungsten
             if (config.EnableCookingContainerOptimization) enabled++; else disabled.Add("CookingContainerOptimization");
             if (config.EnableContainerOptimization) enabled++; else disabled.Add("ContainerOptimization");
             if (config.EnableGridRecipeOptimization) enabled++; else disabled.Add("GridRecipeOptimization");
-            if (config.EnableDepositGeneratorOptimization) enabled++; else disabled.Add("DepositGeneratorOptimization");
+            if (config.EnablePropickReadingOptimization) enabled++; else disabled.Add("PropickReadingOptimization");
             if (config.EnableSendPlayerEntityDeathsOptimization) enabled++; else disabled.Add("SendPlayerEntityDeathsOptimization");
             if (config.EnablePhysicsManagerListOptimization) enabled++; else disabled.Add("PhysicsManagerListOptimization");
             if (config.EnablePhysicsManagerMethodListOptimization) enabled++; else disabled.Add("PhysicsManagerMethodListOptimization");
             if (config.EnableServerMainLinqOptimization) enabled++; else disabled.Add("ServerMainLinqOptimization");
             if (config.EnablePlaceholderOptimization) enabled++; else disabled.Add("PlaceholderOptimization");
             if (config.EnableWildcardFastMatchOptimization) enabled++; else disabled.Add("WildcardFastMatchOptimization");
+            if (config.EnableGetEntitiesAroundOptimization) enabled++; else disabled.Add("GetEntitiesAroundOptimization");
+            if (config.EnableEntityDespawnPacketOptimization) enabled++; else disabled.Add("EntityDespawnPacketOptimization");
+            if (config.EnableRecipeBaseLinqOptimization) enabled++; else disabled.Add("RecipeBaseLinqOptimization");
+            if (config.EnableBroadcastLinqOptimization) enabled++; else disabled.Add("BroadcastLinqOptimization");
+            if (config.EnableBulkEntityAttributesPacketOptimization) enabled++; else disabled.Add("BulkEntityAttributesPacketOptimization");
+            if (config.EnableClassRegistryFrozenOptimization) enabled++; else disabled.Add("ClassRegistryFrozenOptimization");
+            if (config.EnableGetPlayersAroundOptimization) enabled++; else disabled.Add("GetPlayersAroundOptimization");
+            if (config.EnableGenTerraZeroAllocOptimization) enabled++; else disabled.Add("GenTerraZeroAllocOptimization");
+            if (config.EnableGenTerraBitArrayOptimization) enabled++; else disabled.Add("GenTerraBitArrayOptimization");
 
-            string msg = $"[Tungsten] Initialized ({enabled}/17 optimizations enabled)";
+            string msg = $"[Tungsten] Initialized ({enabled}/26 optimizations enabled)";
             if (disabled.Count > 0) msg += $" - Disabled: {string.Join(", ", disabled)}";
             Api.Logger.Notification(msg);
         }
 
         public override void Dispose()
         {
+            Diagnostics.DiagRegistry.Dispose();
             monitor?.Dispose();
+            leakWatchdog?.Dispose();
             benchmarkHarness?.Dispose();
             frameProfiler?.Dispose();
             harmony?.UnpatchAll("com.tungsten.optimizations");
@@ -533,7 +758,14 @@ namespace Tungsten
             PhysicsManagerListOptimizer.Dispose();
             PhysicsManagerMethodListOptimizer.Dispose();
             ServerMainLinqOptimizer.Dispose();
+            PlaceholderOptimization.Dispose();
             WildcardFastMatchOptimization.Dispose();
+            EntityDespawnPacketOptimizer.Dispose();
+            RecipeBaseLinqOptimizer.Dispose();
+            BroadcastLinqOptimizer.Dispose();
+            BulkEntityAttributesPacketOptimizer.Dispose();
+            ClassRegistryFrozenOptimizer.Dispose();
+            GetPlayersAroundOptimizer.Dispose();
 
             // Dispose all instance optimizers
             EntityListOptimizer?.CleanupOnFailure();
@@ -563,6 +795,9 @@ namespace Tungsten
         {
             monitor?.ForceReport();
         }
+
+        public List<string> GetPatchConflicts() => patchConflicts;
+        public LeakWatchdog GetLeakWatchdog() => leakWatchdog;
 
         public void StartAdvancedMonitoring()
         {
@@ -751,13 +986,16 @@ namespace Tungsten
                 restartRequired |= oldConfig.EnableCookingContainerOptimization != config.EnableCookingContainerOptimization;
                 restartRequired |= oldConfig.EnableContainerOptimization != config.EnableContainerOptimization;
                 restartRequired |= oldConfig.EnableGridRecipeOptimization != config.EnableGridRecipeOptimization;
-                restartRequired |= oldConfig.EnableDepositGeneratorOptimization != config.EnableDepositGeneratorOptimization;
+                restartRequired |= oldConfig.EnablePropickReadingOptimization != config.EnablePropickReadingOptimization;
                 restartRequired |= oldConfig.EnableSendPlayerEntityDeathsOptimization != config.EnableSendPlayerEntityDeathsOptimization;
                 restartRequired |= oldConfig.EnablePhysicsManagerListOptimization != config.EnablePhysicsManagerListOptimization;
                 restartRequired |= oldConfig.EnablePhysicsManagerMethodListOptimization != config.EnablePhysicsManagerMethodListOptimization;
                 restartRequired |= oldConfig.EnableServerMainLinqOptimization != config.EnableServerMainLinqOptimization;
                 restartRequired |= oldConfig.EnablePlaceholderOptimization != config.EnablePlaceholderOptimization;
                 restartRequired |= oldConfig.EnableWildcardFastMatchOptimization != config.EnableWildcardFastMatchOptimization;
+                restartRequired |= oldConfig.EnableGetEntitiesAroundOptimization != config.EnableGetEntitiesAroundOptimization;
+                restartRequired |= oldConfig.EnableEntityDespawnPacketOptimization != config.EnableEntityDespawnPacketOptimization;
+                restartRequired |= oldConfig.EnableRecipeBaseLinqOptimization != config.EnableRecipeBaseLinqOptimization;
                 restartRequired |= oldConfig.EnableThreadLocalLifecycleReset != config.EnableThreadLocalLifecycleReset;
                 restartRequired |= oldConfig.EnableReusableCollectionPoolConcurrentOptimization != config.EnableReusableCollectionPoolConcurrentOptimization;
                 restartRequired |= oldConfig.EnableReusableCollectionPoolConstructorCacheOptimization != config.EnableReusableCollectionPoolConstructorCacheOptimization;

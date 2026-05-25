@@ -80,6 +80,8 @@ namespace Tungsten
 
         public static List<ItemStack> GetReusableCookingStacksList(int capacity)
         {
+            Diagnostics.DiagCookingContainer.OnIntercept();
+            Diagnostics.DiagCookingContainer.OnAllocationAvoided(1);
             // v1.10.0: ThreadLocalHelper uses cached config (no GetConfig() call needed)
             var list = ThreadLocalHelper.GetAndClear(reusableCookingStacksList);
             if (capacity > 0 && list.Capacity < capacity)

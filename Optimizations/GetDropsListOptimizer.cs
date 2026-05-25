@@ -145,11 +145,13 @@ namespace Tungsten
 
         public static List<ItemStack> GetCollectionList()
         {
+            Diagnostics.DiagGetDropsListReuse.OnReuse();
             return ThreadLocalHelper.GetAndClear(reusableCollectionList);
         }
 
         public static List<ItemStack> GetItemStackList()
         {
+            Diagnostics.DiagGetDropsListReuse.OnReuse();
             return ThreadLocalHelper.GetAndClear(reusableItemStackList);
         }
     }

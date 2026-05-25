@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
+using Tungsten.Diagnostics;
 using Vintagestory.API.Common.Entities;
 using Vintagestory.API.Server;
 
@@ -353,6 +354,7 @@ public class EntityListReuseOptimizer
 
     public static List<KeyValuePair<Entity, EntityDespawnData>> GetReusableDespawnList()
     {
+        DiagEntityListReuse.OnReuse();
         var list = reusableDespawnList.Value;
         list.Clear();
         EnsureCapacity(list, despawnListPeak);
@@ -361,6 +363,7 @@ public class EntityListReuseOptimizer
 
     public static List<long> GetReusableEntityIdList()
     {
+        DiagEntityListReuse.OnReuse();
         var list = reusableEntityIdList.Value;
         list.Clear();
         EnsureCapacity(list, entityIdListPeak);
@@ -369,6 +372,7 @@ public class EntityListReuseOptimizer
 
     public static List<int> GetReusableDespawnReasonList()
     {
+        DiagEntityListReuse.OnReuse();
         var list = reusableDespawnReasonList.Value;
         list.Clear();
         EnsureCapacity(list, despawnReasonListPeak);
@@ -377,6 +381,7 @@ public class EntityListReuseOptimizer
 
     public static List<int> GetReusableDamageSourceList()
     {
+        DiagEntityListReuse.OnReuse();
         var list = reusableDamageSourceList.Value;
         list.Clear();
         EnsureCapacity(list, damageSourceListPeak);
