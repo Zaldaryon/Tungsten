@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Tungsten.Diagnostics;
 using Vintagestory.API.Server;
 
 namespace Tungsten.Optimizations;
@@ -76,6 +77,8 @@ public static class WildcardFastMatchOptimization
 
         try
         {
+            TungstenProfiler.Mark("tungsten-wildcardmatch");
+            DiagWildcardFastMatch.OnLookup();
             var regex = GetCachedRegex(needle.Substring(1));
             if (regex == null)
                 return true; // fallback to vanilla on invalid pattern
@@ -93,7 +96,9 @@ public static class WildcardFastMatchOptimization
     public static void Dispose()
     {
         disabled = true;
+        disableLogGate = 0;
         regexCache.Clear();
+        api = null;
     }
 
     private static Regex GetCachedRegex(string pattern)
@@ -106,6 +111,7 @@ public static class WildcardFastMatchOptimization
         if (regexCache.TryGetValue(pattern, out var existing))
         {
             existing.AccessGeneration = generation;
+            DiagWildcardFastMatch.OnCacheHit();
             return existing.Regex;
         }
 

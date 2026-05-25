@@ -89,6 +89,8 @@ namespace Tungsten
 
         public static List<T> GetReusableDespawnList<T>()
         {
+            Diagnostics.DiagEntitySimulation.OnTick();
+            Diagnostics.DiagEntitySimulation.OnAllocationAvoided();
             if (reusableDespawnList.Value == null)
                 reusableDespawnList.Value = new List<T>(100);
             var list = (List<T>)reusableDespawnList.Value;

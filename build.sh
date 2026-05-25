@@ -33,7 +33,9 @@ resolve_vintage_story() {
         "${VINTAGE_STORY:-}"
         "${VINTAGE_STORY_HOME:-}"
         "${VINTAGE_STORY_PATH:-}"
+        "/Games/vintagestory"
         "$HOME/Games/vintagestory"
+        "/mnt/c/Users/$USER/Documents/Misc/Vintagestory"
         "/mnt/c/Games/VintageStory"
         "/mnt/c/Program Files/Vintage Story"
     )
@@ -52,6 +54,7 @@ resolve_vintagestory_data_root() {
         "${VINTAGESTORY_DATA:-}"
         "${XDG_CONFIG_HOME:-$HOME/.config}/VintagestoryData"
         "$HOME/.config/VintagestoryData"
+        "/mnt/c/Users/$USER/AppData/Roaming/VintagestoryData"
     )
     first_existing_dir "${candidates[@]}"
 }
@@ -100,6 +103,11 @@ rm -f "$ZIP_PATH"
         "$RELEASE_DIR/Tungsten.dll" \
         modinfo.json \
         modicon.png
+
+    # Add native noise libraries (preserving directory structure)
+    if [[ -d "native" ]]; then
+        zip -q -9 -r "$ZIP_PATH" native/ -x "native/*.pdb" -x "native/*.lib"
+    fi
 )
 
 if [[ ! -f "$ZIP_PATH" ]]; then

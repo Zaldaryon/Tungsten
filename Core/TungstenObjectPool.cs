@@ -23,7 +23,7 @@ namespace Tungsten
         private readonly long shrinkIntervalTicks;
         private int returnCounter;
         private const int shrinkCheckInterval = 1000;
-        private readonly object shrinkLock = new object(); // v1.10.3: Prevent race condition
+        private readonly Lock shrinkLock = new(); // v1.10.3: Prevent race condition
 
         // Compiled delegates for near-native performance
         private static readonly Action<T> trimExcess;

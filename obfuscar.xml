@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+<Obfuscator>
+  <Var name="InPath" value="bin\Release\net8.0" />
+  <Var name="OutPath" value="bin\Release\net8.0\Obfuscated" />
+  
+  <Module file="$(InPath)\Tungsten.dll">
+    <!-- Skip TungstenMod class (mod entry point) to prevent API access issues -->
+    <SkipType name="Tungsten.TungstenMod" />
+    <SkipType name="Tungsten.TungstenConfig" />
+    <SkipType name="Tungsten.TungstenCommand" />
+    <SkipType name="Tungsten.ThreadLocalHelper" />
+    <SkipType name="Tungsten.ThreadLocalRegistry" />
+
+    <!-- Skip static fields used by Harmony transpilers -->
+    <SkipField type="Tungsten.EntityListReuseOptimizer" name="reusableDespawnList" />
+    <SkipField type="Tungsten.EntityListReuseOptimizer" name="reusableEntityIdList" />
+    <SkipField type="Tungsten.EntityListReuseOptimizer" name="reusableDespawnReasonList" />
+    <SkipField type="Tungsten.EntityListReuseOptimizer" name="reusableDamageSourceList" />
+    
+    <SkipField type="Tungsten.PhysicsPacketListOptimizer" name="reusablePositionLists" />
+    <SkipField type="Tungsten.PhysicsPacketListOptimizer" name="reusableAnimationLists1" />
+    <SkipField type="Tungsten.PhysicsPacketListOptimizer" name="reusableTagLists" />
+    <SkipField type="Tungsten.PhysicsPacketListOptimizer" name="reusableAnimationList2" />
+    
+    <SkipField type="Tungsten.BlockListReuseOptimizer" name="reusableModifiedBlocksList" />
+    <SkipField type="Tungsten.BlockListReuseOptimizer" name="reusableModifiedBlocksNoRelightList" />
+    <SkipField type="Tungsten.BlockListReuseOptimizer" name="reusableModifiedDecorsList" />
+    
+    <SkipField type="Tungsten.ChunkSaveListOptimizer" name="reusableMapChunksList" />
+    <SkipField type="Tungsten.ChunkSaveListOptimizer" name="reusableLoadedChunksList" />
+    <SkipField type="Tungsten.ChunkSaveListOptimizer" name="reusableGeneratingChunksList" />
+    
+    <SkipField type="Tungsten.Optimizations.SendChunksListOptimizer" name="reusableLongList" />
+    
+    <SkipField type="Tungsten.Optimizations.GetDropsListOptimizer" name="reusableCollectionList" />
+    <SkipField type="Tungsten.Optimizations.GetDropsListOptimizer" name="reusableItemStackList" />
+    
+    <SkipField type="Tungsten.Optimizations.FixWaterfallsOptimizer" name="cachedLiquidBlockIds" />
+    <SkipField type="Tungsten.Optimizations.FixWaterfallsOptimizer" name="cacheLock" />
+    <SkipField type="Tungsten.Optimizations.FixWaterfallsOptimizer" name="reusableDict" />
+    <SkipField type="Tungsten.Optimizations.FixWaterfallsOptimizer" name="reusableHashSet" />
+    
+    <SkipField type="Tungsten.Optimizations.EventManagerListOptimizer" name="_reusableBlockPosList" />
+    
+    <SkipField type="Tungsten.Optimizations.ChunkLoadingOptimizer" name="reusableRequestList" />
+    
+    <SkipField type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="reusableList1" />
+    <SkipField type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="reusableList2" />
+    <SkipField type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="reusableList3" />
+    <SkipField type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="reusableList4" />
+    <SkipField type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="reusableMapRegionList" />
+    <SkipField type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="reusableMapRegionDbList" />
+    <SkipField type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="reusableUnloadChunkList" />
+    <SkipField type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="reusableUnloadMapChunkList" />
+    <SkipField type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="reusableSendUnloadedList1" />
+    <SkipField type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="reusableSendUnloadedList2" />
+    <SkipField type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="reusableOutOfRangeList" />
+    <SkipField type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="reusableOutOfRangeHashSet" />
+    
+    <SkipField type="Tungsten.Optimizations.EntitySimulationOptimizer" name="reusableDespawnList" />
+    <SkipField type="Tungsten.Optimizations.CookingContainerOptimizer" name="reusableCookingStacksList" />
+    <SkipField type="Tungsten.Optimizations.ContainerOptimizer" name="reusableNonEmptyList" />
+    <SkipField type="Tungsten.Optimizations.ContainerOptimizer" name="reusableContentList" />
+    <SkipField type="Tungsten.Optimizations.GridRecipeOptimizer" name="reusableKeyValuePairList" />
+    <SkipField type="Tungsten.Optimizations.GridRecipeOptimizer" name="reusableItemStackList" />
+    <SkipField type="Tungsten.Optimizations.DepositGeneratorOptimizer" name="reusableOreBearingBlocks" />
+    
+    <!-- Skip Harmony patch methods -->
+    <SkipMethod type="Tungsten.EntityListReuseOptimizer" name="*_Prefix" />
+    <SkipMethod type="Tungsten.EntityListReuseOptimizer" name="*_Transpiler" />
+    <SkipMethod type="Tungsten.PhysicsPacketListOptimizer" name="*_Prefix" />
+    <SkipMethod type="Tungsten.PhysicsPacketListOptimizer" name="*_Transpiler" />
+    <SkipMethod type="Tungsten.BlockListReuseOptimizer" name="*_Prefix" />
+    <SkipMethod type="Tungsten.BlockListReuseOptimizer" name="*_Transpiler" />
+    <SkipMethod type="Tungsten.ChunkSaveListOptimizer" name="*_Prefix" />
+    <SkipMethod type="Tungsten.ChunkSaveListOptimizer" name="*_Transpiler" />
+    <SkipMethod type="Tungsten.Optimizations.SendChunksListOptimizer" name="Transpiler_ReuseList" />
+    <SkipMethod type="Tungsten.Optimizations.SendChunksListOptimizer" name="GetReusableList" />
+    <SkipMethod type="Tungsten.Optimizations.GetDropsListOptimizer" name="Transpiler_ReuseLists" />
+    <SkipMethod type="Tungsten.Optimizations.GetDropsListOptimizer" name="GetCollectionList" />
+    <SkipMethod type="Tungsten.Optimizations.GetDropsListOptimizer" name="GetItemStackList" />
+    <SkipMethod type="Tungsten.Optimizations.FixWaterfallsOptimizer" name="Prefix_FixWaterfalls" />
+    <SkipMethod type="Tungsten.Optimizations.FixWaterfallsOptimizer" name="GetLiquidBlockIds" />
+    <SkipMethod type="Tungsten.Optimizations.EventManagerListOptimizer" name="ApplyPatches" />
+    <SkipMethod type="Tungsten.Optimizations.EventManagerListOptimizer" name="Transpiler" />
+    <SkipMethod type="Tungsten.Optimizations.EventManagerListOptimizer" name="GetReusableList" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkLoadingOptimizer" name="ApplyPatches" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkLoadingOptimizer" name="MoveRequests_Transpiler" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkLoadingOptimizer" name="GetReusableRequestList" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="ApplyPatches" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="SaveDirtyUnloadedChunks_Transpiler" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="SaveDirtyMapRegions_Transpiler" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="UnloadChunkColumns_Transpiler" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="SendUnloadedChunkUnloads_Transpiler" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="SendOutOfRangeChunkUnloads_Transpiler" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="GetReusableList1" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="GetReusableList2" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="GetReusableList3" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="GetReusableList4" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="GetReusableMapRegionList" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="GetReusableMapRegionDbList" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="GetReusableUnloadChunkList" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="GetReusableUnloadMapChunkList" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="GetReusableSendUnloadedList1" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="GetReusableSendUnloadedList2" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="GetReusableOutOfRangeList" />
+    <SkipMethod type="Tungsten.Optimizations.ChunkUnloadingOptimizer" name="GetReusableOutOfRangeHashSet" />
+    <SkipMethod type="Tungsten.Optimizations.EntitySimulationOptimizer" name="ApplyPatches" />
+    <SkipMethod type="Tungsten.Optimizations.EntitySimulationOptimizer" name="TickEntities_Transpiler" />
+    <SkipMethod type="Tungsten.Optimizations.EntitySimulationOptimizer" name="GetReusableDespawnList" />
+    <SkipMethod type="Tungsten.Optimizations.CookingContainerOptimizer" name="ApplyPatches" />
+    <SkipMethod type="Tungsten.Optimizations.CookingContainerOptimizer" name="GetCookingStacks_Transpiler" />
+    <SkipMethod type="Tungsten.Optimizations.CookingContainerOptimizer" name="GetReusableCookingStacksList" />
+    <SkipMethod type="Tungsten.Optimizations.ContainerOptimizer" name="ApplyPatches" />
+    <SkipMethod type="Tungsten.Optimizations.ContainerOptimizer" name="GetNonEmptyContentStacks_Transpiler" />
+    <SkipMethod type="Tungsten.Optimizations.ContainerOptimizer" name="GetContentStacks_Transpiler" />
+    <SkipMethod type="Tungsten.Optimizations.ContainerOptimizer" name="GetReusableNonEmptyList" />
+    <SkipMethod type="Tungsten.Optimizations.ContainerOptimizer" name="GetReusableContentList" />
+    <SkipMethod type="Tungsten.Optimizations.GridRecipeOptimizer" name="ApplyPatches" />
+    <SkipMethod type="Tungsten.Optimizations.GridRecipeOptimizer" name="MatchesShapeLess_Transpiler" />
+    <SkipMethod type="Tungsten.Optimizations.GridRecipeOptimizer" name="GetReusableKeyValuePairList" />
+    <SkipMethod type="Tungsten.Optimizations.GridRecipeOptimizer" name="GetReusableItemStackList" />
+    <SkipMethod type="Tungsten.Optimizations.DepositGeneratorOptimizer" name="ApplyPatches" />
+    <SkipMethod type="Tungsten.Optimizations.DepositGeneratorOptimizer" name="OreBearingBlockQuantityRelative_Transpiler" />
+    <SkipMethod type="Tungsten.Optimizations.DepositGeneratorOptimizer" name="GetReusableOreBearingBlocks" />
+  </Module>
+  
+  <AssemblySearchPath path="$(InPath)" />
+  <AssemblySearchPath path="C:\Games\VintageStory" />
+  <AssemblySearchPath path="C:\Games\VintageStory\Lib" />
+</Obfuscator>
