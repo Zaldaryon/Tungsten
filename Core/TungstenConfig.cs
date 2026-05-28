@@ -38,6 +38,11 @@ public class TungstenConfig
     public bool EnableClassRegistryFrozenOptimization { get; set; } = true;
     public bool EnableGetPlayersAroundOptimization { get; set; } = true;
 
+    // WorldGen optimizations (v1.4.0)
+    public bool EnableGenTerraZeroAllocOptimization { get; set; } = true;
+    public bool EnableGenTerraBitArrayOptimization { get; set; } = true;
+    public bool EnableGenTerraNativeNoiseOptimization { get; set; } = true;
+
     // Advanced GC Optimizations (v1.9.2) - Prioritize GC performance over RAM
     public bool EnablePhysicsManagerListOptimization { get; set; } = true;
     public bool EnablePhysicsManagerMethodListOptimization { get; set; } = true;
@@ -344,6 +349,20 @@ public class TungstenConfig
                     changed = true;
                 }
                 break;
+            case "genterrazeroallocoptimization":
+                if (EnableGenTerraZeroAllocOptimization != value)
+                {
+                    EnableGenTerraZeroAllocOptimization = value;
+                    changed = true;
+                }
+                break;
+            case "genterrabitarrayoptimization":
+                if (EnableGenTerraBitArrayOptimization != value)
+                {
+                    EnableGenTerraBitArrayOptimization = value;
+                    changed = true;
+                }
+                break;
         }
 
         if (changed)
@@ -387,6 +406,8 @@ public class TungstenConfig
             "bulkentityattributespacketoptimization" => EnableBulkEntityAttributesPacketOptimization,
             "classregistryfrozenoptimization" => EnableClassRegistryFrozenOptimization,
             "getplayersaroundoptimization" => EnableGetPlayersAroundOptimization,
+            "genterrazeroallocoptimization" => EnableGenTerraZeroAllocOptimization,
+            "genterrabitarrayoptimization" => EnableGenTerraBitArrayOptimization,
             _ => null
         };
     }
@@ -423,6 +444,8 @@ public class TungstenConfig
             "bulkentityattributespacketoptimization" => EnableBulkEntityAttributesPacketOptimization,
             "classregistryfrozenoptimization" => EnableClassRegistryFrozenOptimization,
             "getplayersaroundoptimization" => EnableGetPlayersAroundOptimization,
+            "genterrazeroallocoptimization" => EnableGenTerraZeroAllocOptimization,
+            "genterrabitarrayoptimization" => EnableGenTerraBitArrayOptimization,
             _ => false
         };
     }

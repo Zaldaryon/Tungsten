@@ -10,12 +10,19 @@ namespace Tungsten.Optimizations;
 /// <summary>
 /// Optimizes BuildClientList allocation in PhysicsManager (called every server tick).
 /// Eliminates 1,200 List allocations per minute.
-/// v1.9.3: Removed ThreadLocal - BuildClientList is single-threaded (main server thread).
+/// 
+/// Safety: Uses a dedicated [ThreadStatic] list instead of ReusableCollectionPool.
+/// BuildClientList assigns its result to a field (ClientList) that is read by physics
+/// threads throughout the tick. A pooled instance could be cleared prematurely by the
+/// pool on the next tick. The ThreadStatic approach ensures the list persists until
+/// explicitly cleared on next call from the same thread.
 /// </summary>
 public static class PhysicsManagerListOptimizer
 {
     private static ICoreServerAPI api;
     private static bool isEnabled;
+
+    [ThreadStatic] private static object reusableClientList;
 
     public static void Initialize(ICoreServerAPI serverApi, Harmony harmony)
     {
@@ -33,7 +40,7 @@ public static class PhysicsManagerListOptimizer
         var buildClientListMethod = AccessTools.Method(physicsManagerType, "BuildClientList");
         if (buildClientListMethod != null)
         {
-            harmony.Patch(buildClientListMethod, 
+            harmony.Patch(buildClientListMethod,
                 transpiler: new HarmonyMethod(typeof(PhysicsManagerListOptimizer), nameof(BuildClientList_Transpiler)));
         }
     }
@@ -65,36 +72,47 @@ public static class PhysicsManagerListOptimizer
             return instructions;
         }
 
-        ReplaceNewobjWithReusableList(codes, targetIndex.Value, ((ConstructorInfo)codes[targetIndex.Value].operand).DeclaringType, 0);
-        api?.Logger.Debug($"[Tungsten] PhysicsManagerListOptimizer: Replaced allocation at IL_{targetIndex.Value}");
+        // Replace new List<ConnectedClient>() with GetReusableClientList<ConnectedClient>()
+        var listType = ((ConstructorInfo)codes[targetIndex.Value].operand).DeclaringType;
+        var elementT = listType.GetGenericArguments()[0];
+        var getMethod = AccessTools.Method(typeof(PhysicsManagerListOptimizer), nameof(GetReusableClientList))
+            .MakeGenericMethod(elementT);
+
+        var original = codes[targetIndex.Value];
+        codes[targetIndex.Value] = new CodeInstruction(OpCodes.Call, getMethod)
+        {
+            labels = original.labels,
+            blocks = original.blocks
+        };
 
         return codes;
+    }
+
+    /// <summary>
+    /// Returns a cleared, dedicated ThreadStatic list. This list is never shared via pool
+    /// and persists until the next call from the same thread, ensuring physics threads
+    /// that hold a reference to ClientList see stable data throughout the tick.
+    /// </summary>
+    public static List<T> GetReusableClientList<T>()
+    {
+        Diagnostics.DiagPhysicsManagerList.OnTick();
+        Diagnostics.DiagPhysicsManagerList.OnAllocationAvoided();
+
+        if (reusableClientList is List<T> list)
+        {
+            list.Clear();
+            return list;
+        }
+
+        var newList = new List<T>(64);
+        reusableClientList = newList;
+        return newList;
     }
 
     public static void Dispose()
     {
         isEnabled = false;
+        reusableClientList = null;
         api = null;
-    }
-
-    private static void ReplaceNewobjWithReusableList(List<CodeInstruction> codes, int index, Type listType, int slot)
-    {
-        var getTypeFromHandle = AccessTools.Method(typeof(Type), nameof(Type.GetTypeFromHandle));
-        var getList = AccessTools.Method(typeof(ReusableCollectionPool), nameof(ReusableCollectionPool.GetList));
-
-        var original = codes[index];
-        var inst = new List<CodeInstruction>
-        {
-            new CodeInstruction(OpCodes.Ldtoken, listType),
-            new CodeInstruction(OpCodes.Call, getTypeFromHandle),
-            new CodeInstruction(OpCodes.Ldc_I4, slot),
-            new CodeInstruction(OpCodes.Call, getList),
-            new CodeInstruction(OpCodes.Castclass, listType)
-        };
-
-        inst[0].labels.AddRange(original.labels);
-        inst[0].blocks.AddRange(original.blocks);
-        codes[index] = inst[0];
-        codes.InsertRange(index + 1, inst.GetRange(1, inst.Count - 1));
     }
 }

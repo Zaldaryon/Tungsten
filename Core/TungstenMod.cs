@@ -1,5 +1,7 @@
 using HarmonyLib;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
@@ -21,6 +23,8 @@ namespace Tungsten
         private Harmony harmony;
         private TungstenMonitor monitor;
         private TungstenBenchmarkHarness benchmarkHarness;
+        private LeakWatchdog leakWatchdog;
+        private List<string> patchConflicts;
 
         public override bool ShouldLoad(EnumAppSide forSide)
         {
@@ -135,6 +139,15 @@ namespace Tungsten
                 monitor = new TungstenMonitor(api);
                 monitor.StartAdvancedMonitoring();
             }
+
+            // Stability: leak watchdog (always active, negligible cost)
+            leakWatchdog = new LeakWatchdog(api);
+
+            // Stability: patch conflict detection (deferred to RunGame so all mods are loaded)
+            api.Event.ServerRunPhase(EnumServerRunPhase.RunGame, () =>
+            {
+                patchConflicts = PatchConflictDetector.Run(api);
+            });
 
             // Optional FrameProfiler integration (vanilla profiler)
             if (config.EnableFrameProfiler)
@@ -469,6 +482,52 @@ namespace Tungsten
                 }
             }
 
+            if (config.EnableGenTerraZeroAllocOptimization)
+            {
+                try
+                {
+                    var genTerraOptimizer = new GenTerraZeroAllocOptimizer(api);
+                    genTerraOptimizer.ApplyPatches(harmony);
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [GenTerraZeroAlloc] " + ex.Message);
+                }
+            }
+
+            if (config.EnableGenTerraBitArrayOptimization)
+            {
+                try
+                {
+                    var bitArrayOptimizer = new GenTerraBitArrayOptimizer(api);
+                    bitArrayOptimizer.ApplyPatches(harmony);
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [GenTerraBitArray] " + ex.Message);
+                }
+            }
+
+            // Initialize native noise library (Phase C1)
+            if (config.EnableGenTerraNativeNoiseOptimization)
+            {
+                try
+                {
+                    // Use the directory where Tungsten.dll was loaded from
+                    string asmPath = typeof(TungstenMod).Assembly.Location;
+                    string basePath = Path.GetDirectoryName(asmPath) ?? "";
+                    TungstenNativeNoise.Initialize(basePath);
+                    if (!TungstenNativeNoise.IsAvailable)
+                    {
+                        Api.Logger.Warning("[Tungsten] [NativeNoise] Library not available or validation failed. Using managed fallback.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Api.Logger.Error("[Tungsten] [NativeNoise] " + ex.Message);
+                }
+            }
+
             var tungstenCommand = new TungstenCommand(this, config);
 
             // Register diagnostic modules
@@ -497,6 +556,7 @@ namespace Tungsten
             Diagnostics.DiagRegistry.Register(new Diagnostics.DiagBulkEntityAttributesPacket());
             Diagnostics.DiagRegistry.Register(new Diagnostics.DiagClassRegistryFrozen());
             Diagnostics.DiagRegistry.Register(new Diagnostics.DiagGetPlayersAround());
+            Diagnostics.DiagRegistry.Register(new Diagnostics.DiagGenTerraZeroAlloc());
             api.Logger.Notification($"[Tungsten] Diagnostic modules registered: {Diagnostics.DiagRegistry.Count}");
 
             var onOff = new string[] { "on", "off" };
@@ -677,8 +737,10 @@ namespace Tungsten
             if (config.EnableBulkEntityAttributesPacketOptimization) enabled++; else disabled.Add("BulkEntityAttributesPacketOptimization");
             if (config.EnableClassRegistryFrozenOptimization) enabled++; else disabled.Add("ClassRegistryFrozenOptimization");
             if (config.EnableGetPlayersAroundOptimization) enabled++; else disabled.Add("GetPlayersAroundOptimization");
+            if (config.EnableGenTerraZeroAllocOptimization) enabled++; else disabled.Add("GenTerraZeroAllocOptimization");
+            if (config.EnableGenTerraBitArrayOptimization) enabled++; else disabled.Add("GenTerraBitArrayOptimization");
 
-            string msg = $"[Tungsten] Initialized ({enabled}/24 optimizations enabled)";
+            string msg = $"[Tungsten] Initialized ({enabled}/26 optimizations enabled)";
             if (disabled.Count > 0) msg += $" - Disabled: {string.Join(", ", disabled)}";
             Api.Logger.Notification(msg);
         }
@@ -687,6 +749,7 @@ namespace Tungsten
         {
             Diagnostics.DiagRegistry.Dispose();
             monitor?.Dispose();
+            leakWatchdog?.Dispose();
             benchmarkHarness?.Dispose();
             frameProfiler?.Dispose();
             harmony?.UnpatchAll("com.tungsten.optimizations");
@@ -732,6 +795,9 @@ namespace Tungsten
         {
             monitor?.ForceReport();
         }
+
+        public List<string> GetPatchConflicts() => patchConflicts;
+        public LeakWatchdog GetLeakWatchdog() => leakWatchdog;
 
         public void StartAdvancedMonitoring()
         {

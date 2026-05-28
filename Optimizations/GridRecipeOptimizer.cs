@@ -13,12 +13,18 @@ namespace Tungsten
     /// Optimizes RecipeBase.MatchesShapeLess by reusing ThreadLocal lists instead of
     /// allocating new List&lt;ItemStack&gt; and List&lt;(ItemStack, IRecipeIngredient)&gt; per call.
     /// VS 1.22: MatchesShapeLess moved from GridRecipe to RecipeBase.
+    /// 
+    /// Safety: Uses a depth counter to detect re-entrant calls (e.g. via SlotModified events
+    /// triggering recipe re-checks on the same thread). When depth > 1, falls back to
+    /// fresh allocations to prevent list aliasing corruption.
     /// </summary>
     public class GridRecipeOptimizer
     {
         private readonly ICoreServerAPI api;
         private static readonly ThreadLocal<List<ItemStack>> reusableItemStackList = new(() => new List<ItemStack>());
         private static readonly ThreadLocal<List<(ItemStack, IRecipeIngredient)>> reusableTupleList = new(() => new List<(ItemStack, IRecipeIngredient)>());
+
+        [ThreadStatic] private static int depth;
 
         public GridRecipeOptimizer(ICoreServerAPI api)
         {
@@ -51,14 +57,19 @@ namespace Tungsten
 
             harmony.Patch(method,
                 prefix: new HarmonyMethod(typeof(GridRecipeOptimizer), nameof(MatchesShapeLess_Prefix)),
+                finalizer: new HarmonyMethod(typeof(GridRecipeOptimizer), nameof(MatchesShapeLess_Finalizer)),
                 transpiler: new HarmonyMethod(typeof(GridRecipeOptimizer), nameof(MatchesShapeLess_Transpiler)));
         }
 
         public static void MatchesShapeLess_Prefix()
         {
-            if (ThreadLocalHelper.IsDisposing) return;
-            ThreadLocalHelper.GetAndClear(reusableItemStackList);
-            ThreadLocalHelper.GetAndClear(reusableTupleList);
+            depth++;
+        }
+
+        public static Exception MatchesShapeLess_Finalizer(Exception __exception)
+        {
+            depth--;
+            return __exception;
         }
 
         public static IEnumerable<CodeInstruction> MatchesShapeLess_Transpiler(IEnumerable<CodeInstruction> instructions)
@@ -110,12 +121,21 @@ namespace Tungsten
         public static List<ItemStack> GetReusableItemStackList()
         {
             Diagnostics.DiagGridRecipe.OnMatch();
+            if (depth > 1)
+            {
+                // Re-entrant call — allocate fresh to avoid aliasing
+                return new List<ItemStack>();
+            }
             Diagnostics.DiagGridRecipe.OnAllocationAvoided(2);
             return ThreadLocalHelper.GetAndClear(reusableItemStackList);
         }
 
         public static List<(ItemStack, IRecipeIngredient)> GetReusableTupleList()
         {
+            if (depth > 1)
+            {
+                return new List<(ItemStack, IRecipeIngredient)>();
+            }
             return ThreadLocalHelper.GetAndClear(reusableTupleList);
         }
     }

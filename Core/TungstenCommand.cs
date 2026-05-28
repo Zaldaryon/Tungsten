@@ -2,6 +2,7 @@ using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Tungsten.Diagnostics;
 
@@ -137,6 +138,11 @@ namespace Tungsten
                 return TextCommandResult.Success(mod.GetBenchmarkHarnessStatus());
             }
 
+            if (command == "health")
+            {
+                return ShowHealth();
+            }
+
             if (command == "manifest")
             {
                 OptimizationIlSignatureManifestValidator.DumpCurrentHashes(mod.Api);
@@ -202,7 +208,15 @@ namespace Tungsten
 
             var module = DiagRegistry.Get(target);
             if (module == null)
+            {
+                // Special commands that aren't modules
+                if (target == "nativebench")
+                {
+                    TungstenNativeNoise.RunMicroBenchmark(mod.Api);
+                    return TextCommandResult.Success("Native noise benchmark complete. See log.");
+                }
                 return TextCommandResult.Error($"Unknown diag module: {target}. Use /tungsten diag to list.");
+            }
 
             switch (action)
             {
@@ -337,6 +351,37 @@ namespace Tungsten
             status.Append(mod.GetFrameProfilerStatus());
 
             return TextCommandResult.Success(status.ToString());
+        }
+
+        private TextCommandResult ShowHealth()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("=== Tungsten Multi-Mod Health ===");
+
+            // Patch conflicts
+            var conflicts = mod.GetPatchConflicts();
+            if (conflicts == null || conflicts.Count == 0)
+            {
+                sb.AppendLine("Patch Conflicts: None detected");
+            }
+            else
+            {
+                sb.AppendLine($"Patch Conflicts: {conflicts.Count} potential issue(s)");
+                foreach (var c in conflicts)
+                    sb.AppendLine("  " + c.Replace("[Tungsten] [PatchConflict] ", ""));
+            }
+
+            // Handler counts by mod
+            var watchdog = mod.GetLeakWatchdog();
+            if (watchdog != null)
+            {
+                var counts = watchdog.GetCurrentCounts();
+                sb.AppendLine($"Event Handlers by Mod ({counts.Values.Sum()} total):");
+                foreach (var kv in counts.OrderByDescending(x => x.Value))
+                    sb.AppendLine($"  {kv.Key}: {kv.Value}");
+            }
+
+            return TextCommandResult.Success(sb.ToString());
         }
     }
 }
