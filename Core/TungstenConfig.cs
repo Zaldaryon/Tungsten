@@ -17,10 +17,31 @@ public class TungstenConfig
     public bool EnableCookingContainerOptimization { get; set; } = true;
     public bool EnableContainerOptimization { get; set; } = true;
     public bool EnableGridRecipeOptimization { get; set; } = true;
-    public bool EnableDepositGeneratorOptimization { get; set; } = true;
+    public bool EnablePropickReadingOptimization { get; set; } = true;
+
+    // Migration: old config field name → new field
+    [JsonProperty("EnableDepositGeneratorOptimization")]
+    private bool? _legacyDepositGenerator { set { if (value.HasValue) EnablePropickReadingOptimization = value.Value; } }
+
     public bool EnableSendPlayerEntityDeathsOptimization { get; set; } = true;
     public bool EnablePlaceholderOptimization { get; set; } = true;
     public bool EnableWildcardFastMatchOptimization { get; set; } = true;
+
+    // New optimizations (v1.3.0)
+    public bool EnableGetEntitiesAroundOptimization { get; set; } = true;
+    public bool EnableEntityDespawnPacketOptimization { get; set; } = true;
+    public bool EnableRecipeBaseLinqOptimization { get; set; } = true;
+
+    // New optimizations (v1.4.0)
+    public bool EnableBroadcastLinqOptimization { get; set; } = true;
+    public bool EnableBulkEntityAttributesPacketOptimization { get; set; } = true;
+    public bool EnableClassRegistryFrozenOptimization { get; set; } = true;
+    public bool EnableGetPlayersAroundOptimization { get; set; } = true;
+
+    // WorldGen optimizations (v1.4.0)
+    public bool EnableGenTerraZeroAllocOptimization { get; set; } = true;
+    public bool EnableGenTerraBitArrayOptimization { get; set; } = true;
+    public bool EnableGenTerraNativeNoiseOptimization { get; set; } = true;
 
     // Advanced GC Optimizations (v1.9.2) - Prioritize GC performance over RAM
     public bool EnablePhysicsManagerListOptimization { get; set; } = true;
@@ -209,10 +230,10 @@ public class TungstenConfig
                     changed = true;
                 }
                 break;
-            case "depositgeneratoroptimization":
-                if (EnableDepositGeneratorOptimization != value)
+            case "propickreadingoptimization":
+                if (EnablePropickReadingOptimization != value)
                 {
-                    EnableDepositGeneratorOptimization = value;
+                    EnablePropickReadingOptimization = value;
                     changed = true;
                 }
                 break;
@@ -279,6 +300,69 @@ public class TungstenConfig
                     changed = true;
                 }
                 break;
+            case "getentitiesaroundoptimization":
+                if (EnableGetEntitiesAroundOptimization != value)
+                {
+                    EnableGetEntitiesAroundOptimization = value;
+                    changed = true;
+                }
+                break;
+            case "entitydespawnpacketoptimization":
+                if (EnableEntityDespawnPacketOptimization != value)
+                {
+                    EnableEntityDespawnPacketOptimization = value;
+                    changed = true;
+                }
+                break;
+            case "recipebaselinqoptimization":
+                if (EnableRecipeBaseLinqOptimization != value)
+                {
+                    EnableRecipeBaseLinqOptimization = value;
+                    changed = true;
+                }
+                break;
+            case "broadcastlinqoptimization":
+                if (EnableBroadcastLinqOptimization != value)
+                {
+                    EnableBroadcastLinqOptimization = value;
+                    changed = true;
+                }
+                break;
+            case "bulkentityattributespacketoptimization":
+                if (EnableBulkEntityAttributesPacketOptimization != value)
+                {
+                    EnableBulkEntityAttributesPacketOptimization = value;
+                    changed = true;
+                }
+                break;
+            case "classregistryfrozenoptimization":
+                if (EnableClassRegistryFrozenOptimization != value)
+                {
+                    EnableClassRegistryFrozenOptimization = value;
+                    changed = true;
+                }
+                break;
+            case "getplayersaroundoptimization":
+                if (EnableGetPlayersAroundOptimization != value)
+                {
+                    EnableGetPlayersAroundOptimization = value;
+                    changed = true;
+                }
+                break;
+            case "genterrazeroallocoptimization":
+                if (EnableGenTerraZeroAllocOptimization != value)
+                {
+                    EnableGenTerraZeroAllocOptimization = value;
+                    changed = true;
+                }
+                break;
+            case "genterrabitarrayoptimization":
+                if (EnableGenTerraBitArrayOptimization != value)
+                {
+                    EnableGenTerraBitArrayOptimization = value;
+                    changed = true;
+                }
+                break;
         }
 
         if (changed)
@@ -306,7 +390,7 @@ public class TungstenConfig
             "sendplayerentitydeathsoptimization" => EnableSendPlayerEntityDeathsOptimization,
             "containeroptimization" => EnableContainerOptimization,
             "gridrecipeoptimization" => EnableGridRecipeOptimization,
-            "depositgeneratoroptimization" => EnableDepositGeneratorOptimization,
+            "propickreadingoptimization" => EnablePropickReadingOptimization,
             "placeholderoptimization" => EnablePlaceholderOptimization,
             "wildcardfastmatchoptimization" => EnableWildcardFastMatchOptimization,
             "threadlocallifecyclereset" => EnableThreadLocalLifecycleReset,
@@ -315,6 +399,15 @@ public class TungstenConfig
             "unifiedruntimecircuitbreaker" => EnableUnifiedRuntimeCircuitBreaker,
             "ilsignaturemanifestvalidation" => EnableIlSignatureManifestValidation,
             "benchmarkharness" => EnableBenchmarkHarness,
+            "getentitiesaroundoptimization" => EnableGetEntitiesAroundOptimization,
+            "entitydespawnpacketoptimization" => EnableEntityDespawnPacketOptimization,
+            "recipebaselinqoptimization" => EnableRecipeBaseLinqOptimization,
+            "broadcastlinqoptimization" => EnableBroadcastLinqOptimization,
+            "bulkentityattributespacketoptimization" => EnableBulkEntityAttributesPacketOptimization,
+            "classregistryfrozenoptimization" => EnableClassRegistryFrozenOptimization,
+            "getplayersaroundoptimization" => EnableGetPlayersAroundOptimization,
+            "genterrazeroallocoptimization" => EnableGenTerraZeroAllocOptimization,
+            "genterrabitarrayoptimization" => EnableGenTerraBitArrayOptimization,
             _ => null
         };
     }
@@ -335,7 +428,7 @@ public class TungstenConfig
             "containeroptimization" => EnableContainerOptimization,
             "sendplayerentitydeathsoptimization" => EnableSendPlayerEntityDeathsOptimization,
             "gridrecipeoptimization" => EnableGridRecipeOptimization,
-            "depositgeneratoroptimization" => EnableDepositGeneratorOptimization,
+            "propickreadingoptimization" => EnablePropickReadingOptimization,
             "placeholderoptimization" => EnablePlaceholderOptimization,
             "wildcardfastmatchoptimization" => EnableWildcardFastMatchOptimization,
             "threadlocallifecyclereset" => EnableThreadLocalLifecycleReset,
@@ -344,6 +437,15 @@ public class TungstenConfig
             "unifiedruntimecircuitbreaker" => EnableUnifiedRuntimeCircuitBreaker,
             "ilsignaturemanifestvalidation" => EnableIlSignatureManifestValidation,
             "benchmarkharness" => EnableBenchmarkHarness,
+            "getentitiesaroundoptimization" => EnableGetEntitiesAroundOptimization,
+            "entitydespawnpacketoptimization" => EnableEntityDespawnPacketOptimization,
+            "recipebaselinqoptimization" => EnableRecipeBaseLinqOptimization,
+            "broadcastlinqoptimization" => EnableBroadcastLinqOptimization,
+            "bulkentityattributespacketoptimization" => EnableBulkEntityAttributesPacketOptimization,
+            "classregistryfrozenoptimization" => EnableClassRegistryFrozenOptimization,
+            "getplayersaroundoptimization" => EnableGetPlayersAroundOptimization,
+            "genterrazeroallocoptimization" => EnableGenTerraZeroAllocOptimization,
+            "genterrabitarrayoptimization" => EnableGenTerraBitArrayOptimization,
             _ => false
         };
     }

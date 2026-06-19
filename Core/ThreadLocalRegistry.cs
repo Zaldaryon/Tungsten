@@ -10,7 +10,7 @@ namespace Tungsten
     public static class ThreadLocalRegistry
     {
         private static readonly HashSet<IDisposable> threadLocals = new HashSet<IDisposable>();
-        private static readonly object lockObj = new object();
+        private static readonly Lock lockObj = new();
 
         /// <summary>
         /// Register a ThreadLocal instance for disposal tracking.
@@ -101,6 +101,46 @@ namespace Tungsten
                     return threadLocals.Count;
                 }
             }
+        }
+
+        /// <summary>
+        /// Pre-warm all registered ThreadLocal instances by forcing value creation on the current thread.
+        /// Call after all optimizers have registered their ThreadLocals.
+        /// Returns the number of instances warmed.
+        /// </summary>
+        public static int PreWarmAll()
+        {
+            IDisposable[] snapshot;
+            lock (lockObj)
+            {
+                snapshot = new IDisposable[threadLocals.Count];
+                threadLocals.CopyTo(snapshot);
+            }
+
+            int warmed = 0;
+            foreach (var threadLocal in snapshot)
+            {
+                try
+                {
+                    var type = threadLocal.GetType();
+                    if (!type.IsGenericType || type.GetGenericTypeDefinition() != typeof(ThreadLocal<>))
+                        continue;
+
+                    var valueProp = type.GetProperty("Value");
+                    if (valueProp == null)
+                        continue;
+
+                    // Access .Value to force lazy initialization
+                    valueProp.GetValue(threadLocal);
+                    warmed++;
+                }
+                catch
+                {
+                    // Skip on error - non-critical
+                }
+            }
+
+            return warmed;
         }
 
         /// <summary>

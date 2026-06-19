@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading;
+using Tungsten.Diagnostics;
 
 namespace Tungsten
 {
@@ -14,7 +15,7 @@ namespace Tungsten
     /// </summary>
     public static class ReusableCollectionPool
     {
-        private static readonly object lockObj = new object();
+        private static readonly Lock lockObj = new();
         private static readonly Dictionary<(Type type, int slot), ThreadLocal<object>> listPoolsLegacy = new Dictionary<(Type, int), ThreadLocal<object>>();
         private static readonly Dictionary<(Type type, int slot), ThreadLocal<object>> setPoolsLegacy = new Dictionary<(Type, int), ThreadLocal<object>>();
         private static readonly Dictionary<Type, Action<object>> clearActionsLegacy = new Dictionary<Type, Action<object>>();
@@ -136,6 +137,10 @@ namespace Tungsten
         {
             if (listType == null) throw new ArgumentNullException(nameof(listType));
 
+            // Diag: PhysicsManager optimizations share slot 0 via this pool
+            DiagPhysicsManagerList.OnTick();
+            DiagPhysicsManagerList.OnAllocationAvoided();
+
             if (ThreadLocalHelper.IsDisposing)
                 return Activator.CreateInstance(listType);
 
@@ -219,6 +224,7 @@ namespace Tungsten
 
         public static object ToList(IEnumerable source, Type listType, int slot)
         {
+            DiagSendPlayerEntityDeaths.OnIntercept();
             var listObj = GetList(listType, slot);
             if (source == null) return listObj;
 

@@ -119,6 +119,7 @@ namespace Tungsten
 
         public static List<BlockPos> GetReusableList(IEnumerable<BlockPos> source)
         {
+            Diagnostics.DiagEventManagerListReuse.OnReuse();
             // v1.10.0: ThreadLocalHelper uses cached config (no GetConfig() call needed)
             var list = ThreadLocalHelper.GetAndClear(_reusableBlockPosList);
 

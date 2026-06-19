@@ -316,6 +316,8 @@ namespace Tungsten
         // Helper methods for SaveDirtyUnloadedChunks
         public static List<T> GetReusableList1<T>()
         {
+            Diagnostics.DiagChunkUnloading.OnChunkProcessed();
+            Diagnostics.DiagChunkUnloading.OnAllocationAvoided();
             if (ThreadLocalHelper.IsDisposing)
                 return new List<T>(100);
 

@@ -13,7 +13,7 @@ namespace Tungsten
     {
         private readonly ICoreServerAPI api;
 
-        private static readonly ThreadLocal<List<long>> reusableRequestList = new(() => new List<long>(200));
+        private static readonly ThreadLocal<List<long>> reusableRequestList = new(() => new List<long>(500));
         public ChunkLoadingOptimizer(ICoreServerAPI api)
         {
             this.api = api;
@@ -151,6 +151,8 @@ namespace Tungsten
 
         public static List<long> GetReusableRequestList()
         {
+            Diagnostics.DiagChunkLoading.OnChunkProcessed();
+            Diagnostics.DiagChunkLoading.OnAllocationAvoided();
             return ThreadLocalHelper.GetAndClear(reusableRequestList);
         }
 
