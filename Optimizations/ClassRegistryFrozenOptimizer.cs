@@ -11,10 +11,8 @@ namespace Tungsten.Optimizations;
 
 /// <summary>
 /// Optimizes ClassRegistry dictionaries after mod loading completes.
-/// Calls TrimExcess() on all 19 dictionaries to compact internal hash tables after bulk insertion,
+/// Calls TrimExcess() on all Dictionary fields to compact internal hash tables after bulk insertion,
 /// reducing memory footprint and improving cache locality for subsequent lookups.
-/// Also pre-warms the dictionaries by forcing a single lookup to ensure JIT compilation of
-/// the generic TryGetValue path before gameplay begins.
 /// Impact: reduced memory waste (~2-4KB per dictionary), marginally faster lookups due to
 /// better cache line utilization. One-time startup cost.
 /// </summary>
@@ -96,34 +94,33 @@ public static class ClassRegistryFrozenOptimizer
 
     private static object GetClassRegistryInstance(Type classRegistryType)
     {
+        // ServerMain.ClassRegistry is a public static field; no instance needed.
+        var serverMainType = AccessTools.TypeByName("Vintagestory.Server.ServerMain");
+        if (serverMainType != null)
+        {
+            try
+            {
+                var field = serverMainType.GetField("ClassRegistry", BindingFlags.Public | BindingFlags.Static);
+                var val = field?.GetValue(null);
+                if (val != null && val.GetType() == classRegistryType)
+                    return val;
+            }
+            catch
+            {
+                // fall through to the IClassRegistryAPI path below
+            }
+        }
+
+        // api.ClassRegistry returns a ClassRegistryAPI wrapper that holds the native
+        // ClassRegistry in its internal `registry` field.
         try
         {
-            // Try via ServerMain.ClassRegistry field
-            var serverMainType = AccessTools.TypeByName("Vintagestory.Server.ServerMain");
-            if (serverMainType != null)
-            {
-                var serverMain = api.World;
-                // Check fields that might hold ClassRegistry
-                var fields = serverMainType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                foreach (var f in fields)
-                {
-                    if (f.FieldType == classRegistryType || f.FieldType.IsAssignableFrom(classRegistryType))
-                    {
-                        var val = f.GetValue(serverMain);
-                        if (val != null && val.GetType() == classRegistryType)
-                            return val;
-                    }
-                }
-            }
-
-            // Try via IClassRegistryAPI - the API object might BE the registry or wrap it
             var classRegApi = api.ClassRegistry;
             if (classRegApi != null)
             {
                 if (classRegApi.GetType() == classRegistryType)
                     return classRegApi;
 
-                // Look for inner registry field
                 var innerFields = classRegApi.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                 foreach (var f in innerFields)
                 {
@@ -134,13 +131,13 @@ public static class ClassRegistryFrozenOptimizer
                     }
                 }
             }
-
-            return null;
         }
         catch
         {
-            return null;
+            // no access path succeeded
         }
+
+        return null;
     }
 
     private static void Disable(string reason)

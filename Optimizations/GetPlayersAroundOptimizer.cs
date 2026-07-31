@@ -116,7 +116,7 @@ public static class GetPlayersAroundOptimizer
             {
                 var client = entry.Value;
                 int state = getClientState(client);
-                if (state != 3) continue; // EnumClientState.Playing = 3
+                if (state != (int)EnumClientState.Playing) continue;
 
                 var entityPlayer = getEntityPlayer?.Invoke(client);
                 if (entityPlayer == null) continue;

@@ -128,9 +128,11 @@ public static class BroadcastLinqOptimizer
             if (socketField != null)
                 getClientSocket = CompileGetter<object>(connectedClientType, socketField);
 
-            // ServerMain.reusableBuffer
+            // ServerMain.reusableBuffer (only used by the unpatched Packet_Server overload).
+            // 1.22.x changed it to a static BoxedPacket, which is not byte[]; skip it to avoid
+            // an invalid cast at accessor-compile time (which would disable the whole optimizer).
             var bufferField = serverMainType.GetField("reusableBuffer", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            if (bufferField != null)
+            if (bufferField != null && bufferField.FieldType == typeof(byte[]))
                 getReusableBuffer = CompileGetter<byte[]>(serverMainType, bufferField);
 
             // ServerMain.doNetBenchmark
@@ -201,7 +203,7 @@ public static class BroadcastLinqOptimizer
             {
                 var client = entry.Value;
                 int state = getClientState(client);
-                if (state == 0 || state == 1) continue; // Offline=0, Queued=1
+                if (state == (int)EnumClientState.Offline || state == (int)EnumClientState.Queued) continue;
 
                 if (!ShouldSkip(client, skipPlayers))
                 {
@@ -243,7 +245,7 @@ public static class BroadcastLinqOptimizer
             {
                 var client = entry.Value;
                 int state = getClientState(client);
-                if (state == 0 || state == 1) continue;
+                if (state == (int)EnumClientState.Offline || state == (int)EnumClientState.Queued) continue;
 
                 if (!ShouldSkip(client, skipPlayers))
                 {
@@ -289,7 +291,7 @@ public static class BroadcastLinqOptimizer
             {
                 var client = entry.Value;
                 int state = getClientState(client);
-                if (state == 0 || state == 1) continue;
+                if (state == (int)EnumClientState.Offline || state == (int)EnumClientState.Queued) continue;
 
                 if (!ShouldSkip(client, skipPlayers))
                     callSendPacketUdp(__instance, client, data);

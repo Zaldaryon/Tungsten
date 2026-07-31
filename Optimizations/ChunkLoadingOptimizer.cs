@@ -42,7 +42,7 @@ namespace Tungsten
                     transpiler: new HarmonyMethod(typeof(ChunkLoadingOptimizer), nameof(MoveRequests_Transpiler)));
             }
 
-            var deleteChunksMethod = AccessTools.Method(supplyChunksType, "deleteChunks");
+            var deleteChunksMethod = AccessTools.Method(supplyChunksType, "deleteChunkColumns");
             if (deleteChunksMethod != null)
             {
                 harmony.Patch(deleteChunksMethod,
@@ -118,7 +118,7 @@ namespace Tungsten
             if (listAllocCount != 2 || setAllocCount != 1)
             {
                 TungstenMod.Instance?.Api?.Logger?.Warning(
-                    $"[Tungsten] [ChunkLoadingOptimizer] deleteChunks: Expected 2 List<> and 1 HashSet<> allocations, found {listAllocCount} and {setAllocCount}. Optimization disabled.");
+                    $"[Tungsten] [ChunkLoadingOptimizer] deleteChunkColumns: Expected 2 List<> and 1 HashSet<> allocations, found {listAllocCount} and {setAllocCount}. Optimization disabled.");
                 return instructions;
             }
 

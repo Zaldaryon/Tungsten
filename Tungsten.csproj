@@ -44,6 +44,9 @@
     <Compile Remove="Documentation\**" />
     <EmbeddedResource Remove="Documentation\**" />
     <None Remove="Documentation\**" />
+    <Compile Remove="public\**" />
+    <EmbeddedResource Remove="public\**" />
+    <None Remove="public\**" />
   </ItemGroup>
 
   <Target Name="Obfuscate" AfterTargets="Build" Condition="'$(EnableObfuscation)' == 'true'">

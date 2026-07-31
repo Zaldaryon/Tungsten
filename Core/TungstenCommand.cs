@@ -314,7 +314,7 @@ namespace Tungsten
         {
             var config = mod.GetConfig();
             var status = new StringBuilder(1024);
-            status.AppendLine("Tungsten v1.3.2 - Optimizations:");
+            status.AppendLine($"Tungsten v{mod.Mod?.Info?.Version ?? "?"} - Optimizations:");
 
             status.Append("entitylistreuse: ").Append(config.EnableEntityListReuse ? "ON" : "OFF").Append(" | ");
             status.Append("blocklistreuse: ").Append(config.EnableBlockListReuse ? "ON" : "OFF").AppendLine();
