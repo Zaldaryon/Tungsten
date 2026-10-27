@@ -2,6 +2,10 @@
 
 Server-side performance optimization mod for Vintage Story.
 
+<p align="center">
+  <a href="https://suhosting.net/ref/ZALDARYON?to=products%2FVintage-Story%2Fvintage-story-6gb"><img src=".github/assets/suhosting-banner.png" alt="Something Unique Hosting" width="800"></a>
+</p>
+
 ## Scope
 - Side: server only (`requiredOnClient: false`)
 - Dependency declared in `modinfo.json`: `game: 1.22.0` (minimum-version semantics)
